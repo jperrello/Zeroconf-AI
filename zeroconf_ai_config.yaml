@@ -1,0 +1,30 @@
+service:
+  name: joeylaptop-ZeroConfAI
+  port: 8000
+  advertise: true
+models:
+  default: llama2
+  available:
+  - llama2
+  allow_override: true
+defaults:
+  max_tokens: 200
+  temperature: 0.7
+  top_p: 0.9
+  stream: false
+limits:
+  max_tokens_limit: 2000
+  rate_limit: 100
+  concurrent_requests: 5
+ollama:
+  host: localhost
+  port: 11434
+  timeout: 60.0
+features:
+  capabilities:
+  - completion
+  - chat
+  api_formats:
+  - zeroconfai-v1
+  streaming: false
+  context: false
