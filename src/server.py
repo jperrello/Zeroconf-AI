@@ -11,7 +11,13 @@ from contextlib import asynccontextmanager
 from zeroconf.asyncio import AsyncZeroconf, AsyncServiceInfo
 from zeroconf import IPVersion
 
-from config import (
+import sys
+from pathlib import Path
+
+# Add project root to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from config.settings import (
     DEFAULT_SERVICE_PORT,
     SERVICE_TYPE,
     OPENROUTER_API_KEY,
@@ -23,8 +29,8 @@ from config import (
     MAX_COST_PER_DAY_USD,
     get_service_properties
 )
-from models import ModelRouter
-from usage_tracker import UsageTracker
+from src.models import ModelRouter
+from src.usage_tracker import UsageTracker
 
 # Validate configuration
 if not OPENROUTER_API_KEY:
@@ -69,7 +75,7 @@ async def lifespan(app: FastAPI):
     # Shutdown
     await aiozc.async_unregister_service(info)
     await aiozc.async_close()
-    print("👋 ZeroConfAI Gateway stopped")
+    print("ZeroConfAI Gateway stopped")
 
 # Initialize FastAPI
 app = FastAPI(
