@@ -4,34 +4,34 @@ This directory contains comprehensive tests for the ZeroConfAI system, demonstra
 
 ## Test Files
 
-### test_e2e.py
-**End-to-end functional tests** covering the core features:
-- Gateway discovery via mDNS
+### test_integration.py
+**Comprehensive integration tests** covering all system functionality:
+- Gateway discovery via mDNS with network validation
 - Basic completion requests with LLM validation
+- Full network path verification (Client -> Gateway -> OpenRouter -> LLM)
 - Model routing based on complexity
+- Multiple model access validation
 - Usage tracking integration
+- Latency analysis and timing validation
 
-Run with: `pytest tests/test_e2e.py -v -s`
+Run all tests:
+```bash
+pytest tests/test_integration.py -v -s
+```
 
-### test_network_proof.py
-**Network verification tests** that prove real network communication:
-- Network path verification (Client -> Gateway -> OpenRouter)
-- OpenRouter integration with metadata validation
-- Multiple model routing demonstration
-- Latency breakdown and timing analysis
+Run specific test:
+```bash
+pytest tests/test_integration.py::test_gateway_discovery -v -s
+```
 
-Run with: `pytest tests/test_network_proof.py -v -s`
-
-### test_demo.py
-**Executive demonstration** - A single comprehensive test perfect for live demos:
-- Step-by-step walkthrough with detailed output
-- Proves real network traffic and LLM responses
-- Shows all system capabilities in one test
-- Great for presenting to stakeholders
-
-Run directly: `python tests/test_demo.py`
-
-Or with pytest: `pytest tests/test_demo.py -v -s`
+### Available Test Functions:
+- `test_gateway_discovery` - mDNS discovery with IP validation
+- `test_basic_completion` - Basic LLM request/response
+- `test_network_path_validation` - Full network path verification
+- `test_model_routing` - Complexity-based model selection
+- `test_multiple_models` - Multiple model tier validation
+- `test_usage_tracking` - Usage tracking integration
+- `test_latency_analysis` - Network timing validation
 
 ## Prerequisites
 
@@ -56,25 +56,22 @@ Or with pytest: `pytest tests/test_demo.py -v -s`
 
 ## Running Tests
 
-### Run all tests:
+### Run all integration tests:
 ```bash
-pytest tests/ -v -s
-```
-
-### Run specific test file:
-```bash
-pytest tests/test_e2e.py -v -s
+pytest tests/test_integration.py -v -s
 ```
 
 ### Run specific test:
 ```bash
-pytest tests/test_e2e.py::test_gateway_discovery -v -s
+pytest tests/test_integration.py::test_gateway_discovery -v -s
 ```
 
-### Run demo for boss presentation:
+### Run live demonstration (for presentations):
 ```bash
-python tests/test_demo.py
+python examples/demo.py
 ```
+
+The demo script (`examples/demo.py`) provides a step-by-step executive presentation showing all system capabilities with detailed output formatting - perfect for stakeholder demonstrations.
 
 ## Test Output Flags
 
@@ -127,7 +124,7 @@ These tests demonstrate:
 
 ## Demo Tips for Presentations
 
-1. Run `test_demo.py` directly (not through pytest) for cleanest output
+1. Run `examples/demo.py` directly for cleanest presentation output
 2. Have server running in visible terminal window
 3. Show real-time logs in both terminals
 4. Point out network addresses, timing, and costs in output

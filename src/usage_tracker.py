@@ -109,21 +109,22 @@ class UsageTracker:
     def get_app_breakdown(self, hours: int = 24) -> Dict[str, Dict]:
         """Get usage breakdown by app"""
         cutoff = time.time() - (hours * 3600)
-        
+
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute("""
-                SELECT 
+                SELECT
                     app_id,
                     COUNT(*) as requests,
+                    SUM(input_tokens + output_tokens) as tokens,
                     SUM(cost_usd) as cost
                 FROM usage_log
                 WHERE timestamp > ?
                 GROUP BY app_id
                 ORDER BY cost DESC
             """, (cutoff,))
-            
+
             return {
-                row[0]: {"requests": row[1], "cost_usd": row[2]}
+                row[0]: {"requests": row[1], "tokens_used": row[2] or 0, "cost_usd": row[3]}
                 for row in cursor.fetchall()
             }
     

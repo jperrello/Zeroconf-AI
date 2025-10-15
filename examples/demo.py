@@ -1,5 +1,5 @@
 """
-Boss Demo Test for ZeroConfAI
+adam Demo Test for ZeroConfAI
 A single comprehensive test designed to showcase the system working end-to-end
 Perfect for live demonstrations
 """
@@ -72,7 +72,7 @@ async def demo_complete_workflow():
     response1 = await client.complete(
         prompt="What is 2 + 2? Reply with just the number.",
         max_tokens=10,
-        app_id="boss-demo"
+        app_id="adam-demo"
     )
     request_time = time.time() - request_start
 
@@ -87,7 +87,7 @@ async def demo_complete_workflow():
     if "4" in response1['text']:
         print(f"  Status:           CORRECT - LLM understood the math problem")
     else:
-        print(f"  Status:           Unexpected response")
+        print(f"  Status:           Unexpected response, not 4")
 
     # ========================================================================
     # STEP 3: Complex Reasoning
@@ -100,7 +100,7 @@ async def demo_complete_workflow():
     response2 = await client.complete(
         prompt="If Sarah is older than John, and John is older than Mike, who is the youngest? Reply with just the name.",
         max_tokens=10,
-        app_id="boss-demo"
+        app_id="adam-demo"
     )
     request_time = time.time() - request_start
 
@@ -130,7 +130,7 @@ async def demo_complete_workflow():
     short_response = await client.complete(
         prompt="Hi",
         max_tokens=5,
-        app_id="boss-demo"
+        app_id="adam-demo"
     )
     short_time = time.time() - short_start
 
@@ -146,7 +146,7 @@ async def demo_complete_workflow():
     long_response = await client.complete(
         prompt=long_prompt,
         max_tokens=20,
-        app_id="boss-demo"
+        app_id="adam-demo"
     )
     long_time = time.time() - long_start
 
@@ -222,33 +222,18 @@ async def demo_complete_workflow():
     # ========================================================================
     # Final Summary
     # ========================================================================
-    print_header("DEMONSTRATION COMPLETE - ALL SYSTEMS OPERATIONAL")
-
-    print("\nWhat was demonstrated:")
-    print("  [X] Zero-configuration network discovery (mDNS)")
-    print("  [X] Real network communication (not mocked)")
-    print("  [X] Integration with OpenRouter cloud API")
-    print("  [X] Real LLM responses from multiple models")
-    print("  [X] Intelligent cost-based model routing")
-    print("  [X] Usage tracking and cost monitoring")
-    print("  [X] Sub-second response times for simple queries")
-    print("  [X] Correct answers proving LLM understanding")
+    print_header("ALL SYSTEMS OPERATIONAL")
 
     print("\nKey Metrics:")
     total_cost = (response1['cost_estimate'] + response2['cost_estimate'] +
                   short_response['cost_estimate'] + long_response['cost_estimate'])
     total_tokens = (response1['tokens_used'] + response2['tokens_used'] +
                     short_response['tokens_used'] + long_response['tokens_used'])
-
-    print(f"  Total requests made:     4")
+    print("   This demo used a total of four requests. ")
     print(f"  Total tokens used:       {total_tokens}")
     print(f"  Total cost:              ${total_cost:.6f}")
     print(f"  Gateway address:         {gateway.base_url}")
     print(f"  Models accessed:         {len({response1['model'], response2['model'], short_response['model'], long_response['model']})} unique")
-
-    print("\n" + "=" * 80)
-    print("Ready for production use!")
-    print("=" * 80)
 
     client.disconnect()
 
