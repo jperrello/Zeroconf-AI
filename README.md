@@ -106,7 +106,7 @@ When you run the server:
 **It's literally like a printer.** Apps don't need printer API keys. They just discover printers and print. Same thing here, but for AI.
 
 
-## Current Limitations that I plan on improvinf 
+## Current Limitations that I plan on improving
 
 - **OpenRouter Only** - Currently just proxies to OpenRouter (OpenAI-compatible endpoints coming soon)
 - **Python Only** - Client library only in Python (JS, Go, Rust)
@@ -129,7 +129,7 @@ When you run the server:
 }
 ```
 
-## 🤔 FAQ
+## FAQ
 
 **"Is this secure?"**
 It's as secure as your home network. If you trust devices on your WiFi, you can trust this.
