@@ -1,4 +1,4 @@
-# ZeroConf AI"
+# ZeroConf AI
 
 *Are you tired of managing API keys for every single app that wants to use AI?*
 
