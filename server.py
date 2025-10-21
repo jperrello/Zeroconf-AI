@@ -18,7 +18,7 @@ OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL")
 
 if not OPENROUTER_API_KEY or not OPENROUTER_BASE_URL:
     raise ValueError(
-        "Missing required environment variables. "
+        "Missing environment variables. "
         "Please set OPENROUTER_API_KEY and OPENROUTER_BASE_URL in your .env file"
     )
 #=======================================
