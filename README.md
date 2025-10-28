@@ -151,9 +151,3 @@ Then the proxy can't reach OpenRouter. Local model support (Ollama) is on the ro
 ---
 
 Built with ❤️ and mild frustration..
-
-Special interest in:
-- Client libraries for more languages
-- UI for non-technical admins
-- Cost tracking dashboards
-- Model routing strategies
