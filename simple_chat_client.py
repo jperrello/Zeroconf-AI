@@ -2,37 +2,45 @@ from zeroconf import Zeroconf, ServiceBrowser, ServiceListener
 import socket
 import time
 import requests
+import threading 
 
 class SimpleListener(ServiceListener):
     def __init__(self):
-        self.service_url = None
+        self.best_service_url = None
+        self.best_service_priority = float('inf')
+        self.lock = threading.Lock()
+        self.service_found = threading.Event()
 
     def add_service(self, zc: Zeroconf, type_: str, name: str) -> None:
-        if self.service_url is not None:
-            return  # Already found a service
-
         info = zc.get_service_info(type_, name)
-        if info:
-            address = socket.inet_ntoa(info.addresses[0])
-            port = info.port
-            self.service_url = f"http://{address}:{port}"
+        if not info:
+            return
+
+        with self.lock:
+            if info.priority < self.best_service_priority:
+                address = socket.inet_ntoa(info.addresses[0])
+                port = info.port
+                self.best_service_url = f"http://{address}:{port}"
+                self.best_service_priority = info.priority
+                self.service_found.set()
 
 
 def main():
     zc = Zeroconf()
     listener = SimpleListener()
     browser = ServiceBrowser(zc, "_zeroconfai._tcp.local.", listener)
+    
 
-    print("Searching for ZeroconfAI services...")
-    timeout = 10.0  # seconds
-    start_time = time.time()
-    while listener.service_url is None and (time.time() - start_time) < timeout:
-        time.sleep(0.1)
-    if listener.service_url is None:
+    print("Searching for ZeroconfAI services...") 
+    time.sleep(1.5)
+    if not listener.service_found.wait(timeout=3.0):
         print("No ZeroconfAI services found.")
+        browser.cancel()
+        zc.close()  
+        return
 
-    print(f"Connected to service at {listener.service_url}")
-    models_response = requests.get(f"{listener.service_url}/v1/models")
+    print(f"Connected to service at {listener.best_service_url} with priority {listener.best_service_priority}")
+    models_response = requests.get(f"{listener.best_service_url}/v1/models")
     model = (models_response.json().get('models', []))[0]['id'] if models_response.ok else None
 
     chat_history = [] # dont even need this if we want it to be simpler, but that kinda defeats the purpose of a chat client
@@ -55,7 +63,7 @@ def main():
             "model": model,
             "messages": current_message
         }
-        response = requests.post(f"{listener.service_url}/v1/chat/completions", json=payload)
+        response = requests.post(f"{listener.best_service_url}/v1/chat/completions", json=payload)
         if response.ok:
             data = response.json()
             assistant_message = data['choices'][0]['message']['content']

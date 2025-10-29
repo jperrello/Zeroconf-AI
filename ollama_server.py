@@ -1,7 +1,6 @@
 import argparse
 import socket
 from fastapi import FastAPI, HTTPException
-import os
 from zeroconf import ServiceInfo, Zeroconf
 import uvicorn
 import requests
@@ -77,11 +76,7 @@ async def chat_completions(request: UserAIRequest) -> Dict[str, Any]:
         ollama_payload["options"] = {"num_predict": request.max_tokens}
     
     try:
-        response = requests.post(
-            f"{OLLAMA_BASE_URL}/api/chat",
-            json=ollama_payload,
-            timeout=120
-        )
+        response = requests.post(f"{OLLAMA_BASE_URL}/api/chat",json=ollama_payload,timeout=120)
         response.raise_for_status()
         data = response.json()
         
@@ -101,11 +96,7 @@ async def chat_completions(request: UserAIRequest) -> Dict[str, Any]:
                     "finish_reason": "stop"
                 }
             ],
-            "usage": {
-                "prompt_tokens": data.get("prompt_eval_count", -1),
-                "completion_tokens": data.get("eval_count", -1),
-                "total_tokens": -1
-            }
+    
         }
     except requests.Timeout:
         raise HTTPException(status_code=504, detail="Ollama request timed out")
@@ -114,7 +105,7 @@ async def chat_completions(request: UserAIRequest) -> Dict[str, Any]:
 
 #========================================================
 #Setting up the service
-def register_zeroconfai(port: int) -> tuple[Zeroconf, ServiceInfo]:
+def register_zeroconfai(port: int, priority: int) -> tuple[Zeroconf, ServiceInfo]:
     zeroconf = Zeroconf()
 
     host = socket.gethostname()
@@ -123,7 +114,7 @@ def register_zeroconfai(port: int) -> tuple[Zeroconf, ServiceInfo]:
     service_type = "_zeroconfai._tcp.local."
     service_name = f"Ollama.{service_type}" #person who sets up the service should be able to change this to whatever they want
 
-    info = ServiceInfo(type_=service_type, name=service_name, port=port, addresses=[socket.inet_aton(host_ip)], server=f"{host}.local.", properties={'version': '1.0', 'api': 'OpenRouter'})
+    info = ServiceInfo(type_=service_type, name=service_name, port=port, addresses=[socket.inet_aton(host_ip)], server=f"{host}.local.", properties={'version': '1.0', 'api': 'OpenRouter'}, priority=priority)
 
     zeroconf.register_service(info)
 
@@ -148,13 +139,14 @@ def main():
     parser = argparse.ArgumentParser(description="ZeroconfAI Ollama Proxy Server")
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=None)
+    parser.add_argument("--priority", type=int, default=50)
     args = parser.parse_args()
     
     port = args.port if args.port else find_port_number()
     print(f"Starting Ollama proxy on {args.host}:{port}")
-    
-    zeroconf, service_info = register_zeroconfai(port)
-    
+
+    zeroconf, service_info = register_zeroconfai(port, priority=args.priority)
+
     try:
         uvicorn.run(app, host=args.host, port=port)
     finally:

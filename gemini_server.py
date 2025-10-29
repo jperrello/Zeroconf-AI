@@ -6,13 +6,12 @@ from zeroconf import ServiceInfo, Zeroconf
 import uvicorn
 import requests
 from pydantic import BaseModel
-from typing import Literal, List, Dict, Any
+from typing import Literal, Dict, Any
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv() # TODO: gemini keys instead of openrouter keys
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL")
-
 if not OPENROUTER_API_KEY or not OPENROUTER_BASE_URL:
     raise ValueError(
         "Missing environment variables. "
@@ -29,7 +28,7 @@ app = FastAPI(
         "url": "https://jperrello.netlify.app/",
         "email": "jperrell@ucsc.edu",
     })
-
+# TODO: Avoid hardcoding model names, can filter with "Gemini" n the name.
 Gemini_Models = {"Gemini-2.5-Flash": "google/gemini-2.5-flash",
                  "Gemini-2.5-Pro": "google/gemini-2.5-pro",
                  "Gemini-2.0-Flash": "google/gemini-2.0-flash-001",
@@ -41,7 +40,7 @@ class CurrentChatContent(BaseModel):
 
 class UserAIRequest(BaseModel):
     model: str
-    messages: list[CurrentChatContent] # This is kind of a slippery slope, appending all the old messages into the context each time is a little spooky (memory leaks, context accumulation)
+    messages: list[CurrentChatContent]
     max_tokens: int | None = None # Might be a better idea to set a default max later. Just dont know how much context is going to be dumped into this.
 
 @app.get("/v1/health", description="Get's the health of server")
@@ -75,7 +74,7 @@ async def chat_completions(request: UserAIRequest) -> Dict[str, Any]:
 #========================================================
 # Setting up the service
 
-def register_zeroconfai(port: int) -> tuple[Zeroconf, ServiceInfo]:
+def register_zeroconfai(port: int, priority: int) -> tuple[Zeroconf, ServiceInfo]:
     zeroconf = Zeroconf()
 
     host = socket.gethostname()
@@ -84,7 +83,7 @@ def register_zeroconfai(port: int) -> tuple[Zeroconf, ServiceInfo]:
     service_type = "_zeroconfai._tcp.local."
     service_name = f"Gemini.{service_type}" #person who sets up the service should be able to change this to whatever they want
 
-    info = ServiceInfo(type_=service_type, name=service_name, port=port, addresses=[socket.inet_aton(host_ip)], server=f"{host}.local.", properties={'version': '1.0', 'api': 'OpenRouter'})
+    info = ServiceInfo(type_=service_type, name=service_name, port=port, addresses=[socket.inet_aton(host_ip)], server=f"{host}.local.", properties={'version': '1.0', 'api': 'OpenRouter'}, priority=priority)
 
     zeroconf.register_service(info)
 
@@ -109,12 +108,13 @@ def main():
     parser = argparse.ArgumentParser(description="ZeroconfAI Gemini Proxy Server")
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=None)
+    parser.add_argument("--priority", type=int, default=50)
     args = parser.parse_args()
     
     port = args.port if args.port else find_port_number()
     print(f"Starting Gemini proxy on {args.host}:{port}")
     
-    zeroconf, service_info = register_zeroconfai(port)
+    zeroconf, service_info = register_zeroconfai(port, priority=args.priority)
     
     try:
         uvicorn.run(app, host=args.host, port=port)

@@ -108,7 +108,8 @@ class ZeroconfAIListener(ServiceListener):
             url = f"http://{address}:{port}"
             service_info = {
                 "version": info.properties.get(b'version', b'').decode('utf-8'),
-                "api": info.properties.get(b'api', b'').decode('utf-8')
+                "api": info.properties.get(b'api', b'').decode('utf-8'),
+                "priority": info.priority
             }
             self.service_manager.add_service_to_manager(name, url, service_info)
     
@@ -287,7 +288,7 @@ def main():
                     continue
 
                 client.set_active_service(selected_name)
-                print(f"\nConnected to: {selected_name} ({selected_url})")
+                print(f"\nConnected to: {selected_name} ({selected_url} with priority {service_manager.services[selected_name]['info'].get('priority', 'N/A')})")
                 
                 # Fetch and display available models
                 try:
@@ -306,22 +307,19 @@ def main():
                     if not client.is_connected:
                         print(f"\nService went offline. Returning to service selection...")
                         break
-                    
+
                     user_input = input("You: ").strip()
                     
                     if user_input.lower() in ['quit', 'exit']:
                         print("Goodbye!")
                         return
-                    
                     if user_input.lower() == 'back':
                         print("\nReturning to service selection...")
                         break
-                    
                     if user_input.lower() == 'clear':
                         client.clear_history()
                         print("Chat history cleared.\n")
                         continue
-                    
                     if not user_input:
                         continue
                     

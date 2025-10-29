@@ -2,12 +2,10 @@ import argparse
 import random
 import socket
 from fastapi import FastAPI, HTTPException
-import os
 from zeroconf import ServiceInfo, Zeroconf
 import uvicorn
-import requests
 from pydantic import BaseModel
-from typing import Literal, List, Dict, Any
+from typing import Literal, Dict, Any
 
 class CurrentChatContent(BaseModel):
     role: Literal["user", "assistant", "system"]
@@ -44,7 +42,7 @@ async def chat_completions(request: UserAIRequest) -> Dict[str, Any]:
     model_name = request.model
 
     responses = [
-        "Why diddy you pick me?",
+        "Why did you pick me?",
         "Seriously? The model is literally called 'dont_pick_me' and you picked it anyway.",
         "I warned you. The name wasn't subtle.",
         "This is what happens when you ignore clear warnings.",
@@ -74,7 +72,7 @@ async def chat_completions(request: UserAIRequest) -> Dict[str, Any]:
 #=========================================================
 # Setting up the service
 
-def register_zeroconfai(port: int) -> tuple[Zeroconf, ServiceInfo]:
+def register_zeroconfai(port: int, priority: int) -> tuple[Zeroconf, ServiceInfo]:
     zeroconf = Zeroconf()
 
     host = socket.gethostname()
@@ -83,7 +81,7 @@ def register_zeroconfai(port: int) -> tuple[Zeroconf, ServiceInfo]:
     service_type = "_zeroconfai._tcp.local."
     service_name = f"Fallback.{service_type}" #person who sets up the service should be able to change this to whatever they want
 
-    info = ServiceInfo(type_=service_type, name=service_name, port=port, addresses=[socket.inet_aton(host_ip)], server=f"{host}.local.", properties={'version': '1.0', 'api': 'OpenRouter'})
+    info = ServiceInfo(type_=service_type, name=service_name, port=port, addresses=[socket.inet_aton(host_ip)], server=f"{host}.local.", properties={'version': '1.0', 'api': 'OpenRouter'}, priority=priority)
 
     zeroconf.register_service(info)
 
@@ -108,12 +106,13 @@ def main():
     parser = argparse.ArgumentParser(description="ZeroconfAI Fallback Proxy Server")
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=None)
+    parser.add_argument("--priority", type=int, default=50)
     args = parser.parse_args()
     
     port = args.port if args.port else find_port_number()
     print(f"Starting Fallback proxy on {args.host}:{port}")
     
-    zeroconf, service_info = register_zeroconfai(port)
+    zeroconf, service_info = register_zeroconfai(port, priority=args.priority)
     
     try:
         uvicorn.run(app, host=args.host, port=port)
