@@ -150,6 +150,7 @@ async def chat_completions(request: UserAIRequest):
         print(f"OpenRouter connection error: {type(e).__name__}: {str(e)}")
         raise HTTPException(status_code=502, detail=f"OpenRouter connection error: {str(e)}")
 
+
 class PriorityDiscoveryListener(ServiceListener):
     def __init__(self):
         self.priorities = set()
@@ -173,6 +174,7 @@ class PriorityDiscoveryListener(ServiceListener):
     def remove_service(self, zc: Zeroconf, type_: str, name: str) -> None:
         pass
 
+#right when a service is being registered, we want to find an available priority
 def find_available_priority(desired_priority: int, service_type: str) -> int:
     discovery_zc = Zeroconf()
     listener = PriorityDiscoveryListener()
@@ -214,9 +216,9 @@ def register_zeroconfai(port: int, priority: int, service_type: str) -> tuple[Ze
         properties={
             'version': '1.0', 
             'api': 'OpenRouter',
-            'priority': str(actual_priority)
+            'priority': str(actual_priority) # Store priority as a string property
         },
-        priority=actual_priority
+        priority=actual_priority # Also set as ServiceInfo.priority field
     )
 
     zeroconf.register_service(info)
@@ -225,15 +227,17 @@ def register_zeroconfai(port: int, priority: int, service_type: str) -> tuple[Ze
 
     return zeroconf, info
 
-def find_port_number(start_port=8080, max_attempts=20) -> int:
+def find_port_number(host: str, start_port=8080, max_attempts=20) -> int:
     for port in range(start_port, start_port + max_attempts):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind(('', port))
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
+                s.bind((host, port))
                 return port
         except OSError:
             continue
-    raise RuntimeError(f"There are no available ports in range {start_port} - {start_port + max_attempts}, please try again by specifying port number with --port.")
+    raise RuntimeError(
+        f"No available ports in range {start_port} - {start_port + max_attempts}")
 
 def main():
     parser = argparse.ArgumentParser(description="ZeroconfAI Gemini Proxy Server")
@@ -242,7 +246,7 @@ def main():
     parser.add_argument("--priority", type=int, default=50)
     args = parser.parse_args()
     
-    port = args.port if args.port else find_port_number()
+    port = args.port if args.port else find_port_number(args.host)
     print(f"Starting Gemini proxy on {args.host}:{port} with desired priority {args.priority}...")
     
     service_type = "_zeroconfai._tcp.local."

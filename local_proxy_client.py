@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, List, Optional, Set
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import Literal
@@ -14,6 +14,7 @@ import requests
 from zeroconf import ServiceListener, ServiceBrowser, Zeroconf
 import logging
 import json
+import asyncio
 
 #used for when i was debugging, there are so many logs now that I am just keeping them. they are going to be commented out for now.
 logging.basicConfig(
@@ -189,14 +190,10 @@ class ModelRouter:
         
         is_streaming = request_data.get("stream", False)
         
-        #logger.info(f"Request streaming mode: {is_streaming}")
-        #logger.debug(f"Full request data: {json.dumps(request_data, indent=2)}")
-        
         last_error = None
         for service in candidates[:max_retries]:
             try:
                 logger.info(f"Routing '{model_id}' request to {service.name} at {service.url}")
-                
                 #this is where the proxy receives the request and forwards it to the selected service
                 response = requests.post(
                     f"{service.url}/v1/chat/completions",
@@ -205,20 +202,16 @@ class ModelRouter:
                     stream=is_streaming #crucial
                 )
                 
-                logger.info(f"Response status: {response.status_code}")
-                logger.debug(f"Response headers: {dict(response.headers)}")
-                
-                response.raise_for_status()
+                if response.status_code != 200:
+                    raise ValueError(f"Service returned status {response.status_code}")
                 
                 if is_streaming:
-                    logger.info(f"Returning streaming response from {service.name}")
                     return response
                 else:
                     try:
                         result = response.json()
-                        logger.debug(f"Non-streaming response: {json.dumps(result, indent=2)[:500]}")
                         
-                        if not result.get("choices"):
+                        if "choices" not in result:
                             raise ValueError(f"Invalid response format: missing 'choices' field")
                         
                         logger.info(f"Successfully routed to {service.name}")
@@ -308,6 +301,7 @@ async def get_models(manager: ProxyManager = Depends(get_proxy_manager)) -> dict
 @app.post("/v1/chat/completions")
 async def chat_completions(
     request: UserAIRequest,
+    raw_request: Request,
     manager: ProxyManager = Depends(get_proxy_manager)
 ):
     logger.info(f"=== NEW REQUEST ===")
@@ -315,9 +309,6 @@ async def chat_completions(
     logger.info(f"Messages: {len(request.messages)}")
     logger.info(f"Stream: {request.stream}")
     logger.info(f"Max tokens: {request.max_tokens}")
-    
-    #for i, msg in enumerate(request.messages):
-        #logger.debug(f"Message {i}: {msg.role} - {msg.content[:100]}")
     
     request_dict = {
         "model": request.model,
@@ -330,24 +321,23 @@ async def chat_completions(
     response = manager.router.route_request(request.model, request_dict)
     
     if request.stream:
-        #logger.info(f"Setting up streaming response")
-        
-        def generate():
+        async def generate():
             chunk_count = 0
             try:
-                for line in response.iter_lines():
-                    if line:
+                for chunk in response.iter_content(chunk_size=None):
+                    if await raw_request.is_disconnected(): #if the person hits big red stop button
+                        logger.info(f"Client disconnected after {chunk_count} chunks. Stopping stream.")
+                        break
+                    
+                    if chunk:
                         chunk_count += 1
-                        decoded_line = line.decode('utf-8')
+                        decoded_chunk = chunk.decode('utf-8')
                         
-                        logger.debug(f"Chunk {chunk_count}: {decoded_line[:200]}")
+                        logger.debug(f"Chunk {chunk_count}: {decoded_chunk[:200]}")
                         
-                        if decoded_line.startswith('data: '):
-                            yield line + b'\n\n'
-                        else:
-                            yield f"data: {decoded_line}\n\n".encode('utf-8')
+                        yield chunk
                 
-                #logger.info(f"Stream complete. Total chunks: {chunk_count}")
+                logger.info(f"Stream complete. Total chunks: {chunk_count}")
             except Exception as e:
                 logger.error(f"Error in stream generator: {type(e).__name__}: {str(e)}")
                 raise
@@ -364,41 +354,37 @@ async def chat_completions(
             }
         )
     else:
-        #logger.info(f"Returning non-streaming response")
-        #logger.debug(f"Response type: {type(response)}")
-        #logger.debug(f"Response keys: {response.keys() if isinstance(response, dict) else 'N/A'}")
-        
         if isinstance(response, dict) and "choices" in response:
-            #logger.info(f"Valid response with {len(response['choices'])} choices")
             if response['choices']:
                 content = response['choices'][0].get('message', {}).get('content', '')
                 logger.info(f"Content length: {len(content)}")
-                #logger.debug(f"Content preview: {content[:200]}")
         
         return JSONResponse(
             content=response,
             media_type="application/json"
         )
 
-def find_port_number(start_port=8080, max_attempts=20) -> int:
+def find_port_number(host: str, start_port=8080, max_attempts=20) -> int:
     for port in range(start_port, start_port + max_attempts):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind(('', port))
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
+                s.bind((host, port))
                 return port
         except OSError:
             continue
-    raise RuntimeError(f"No available ports in range {start_port} - {start_port + max_attempts}")
-
+    raise RuntimeError(
+        f"No available ports in range {start_port} - {start_port + max_attempts}"
+    )
 def main():
     global _proxy_manager
 
-    parser = argparse.ArgumentParser(description="ZeroconfAI Local Proxy Server")
-    parser.add_argument("--host", type=str, default="127.0.0.1")
+    parser = argparse.ArgumentParser(description="ZeroconfAI Proxy")
+    parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=None)
     args = parser.parse_args()
-
-    port = args.port if args.port else find_port_number()
+    
+    port = args.port if args.port else find_port_number(args.host)
 
     print("=" * 50)
     print("  ZeroconfAI Local Proxy")

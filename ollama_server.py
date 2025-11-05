@@ -303,15 +303,17 @@ def register_zeroconfai(port: int, priority: int, service_type: str) -> tuple[Ze
 
     return zeroconf, info
 
-def find_port_number(start_port=8080, max_attempts=20) -> int:
+def find_port_number(host: str, start_port=8080, max_attempts=20) -> int:
     for port in range(start_port, start_port + max_attempts):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind(('', port))
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
+                s.bind((host, port))
                 return port
         except OSError:
             continue
-    raise RuntimeError(f"There are no available ports in range {start_port} - {start_port + max_attempts}, please try again by specifying port number with --port.")
+    raise RuntimeError(
+        f"No available ports in range {start_port} - {start_port + max_attempts}")
 
 def main():
     parser = argparse.ArgumentParser(description="ZeroconfAI Ollama Proxy Server")
@@ -320,7 +322,7 @@ def main():
     parser.add_argument("--priority", type=int, default=50)
     args = parser.parse_args()
     
-    port = args.port if args.port else find_port_number()
+    port = args.port if args.port else find_port_number(args.host)
     print(f"Starting Ollama proxy on {args.host}:{port} with desired priority {args.priority}...")
 
     service_type = "_zeroconfai._tcp.local."
