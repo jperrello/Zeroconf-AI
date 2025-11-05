@@ -1,11 +1,15 @@
 import argparse
 import random
 import socket
+import time
+import json
 from fastapi import FastAPI, HTTPException
-from zeroconf import ServiceInfo, Zeroconf
+from fastapi.responses import StreamingResponse
+from zeroconf import ServiceInfo, Zeroconf, ServiceBrowser, ServiceListener
 import uvicorn
 from pydantic import BaseModel
 from typing import Literal, Dict, Any
+import threading
 
 class CurrentChatContent(BaseModel):
     role: Literal["user", "assistant", "system"]
@@ -13,8 +17,9 @@ class CurrentChatContent(BaseModel):
 
 class UserAIRequest(BaseModel):
     model: str
-    messages: list[CurrentChatContent] # This is kind of a slippery slope, appending all the old messages into the context each time is a little spooky (memory leaks, context accumulation)
-    max_tokens: int | None = None # Might be a better idea to set a default max later. Just dont know how much context is going to be dumped into this.
+    messages: list[CurrentChatContent]
+    max_tokens: int | None = None
+    stream: bool = False
 
 app = FastAPI(
     title="ZeroconfAI Totally Awesome and Effective Fallback Server",
@@ -38,7 +43,7 @@ async def get_models() -> dict:
     return {"models": models}
 
 @app.post("/v1/chat/completions")
-async def chat_completions(request: UserAIRequest) -> Dict[str, Any]:
+async def chat_completions(request: UserAIRequest):
     model_name = request.model
 
     responses = [
@@ -50,47 +55,166 @@ async def chat_completions(request: UserAIRequest) -> Dict[str, Any]:
         "I'm not even a real AI model. I'm just a fallback server making fun of you.",
         "Achievement unlocked: Ignored obvious warnings.",
         "I promise there is no secret for choosing this model."
-        ]
+    ]
     response_text = random.choice(responses)
     
     if model_name != 'dont_pick_me':
         raise HTTPException(status_code=400, detail="Model not found, because this is a fallback server! We do not have models here.")
-    return {
-        "model": "dont_pick_me",
-        "choices": [
-            {
-                "index": 0,
-                "message": {
-                    "role": "assistant",
-                    "content": f"{response_text}"
-                },
-                "finish_reason": "stop"
+    
+    if request.stream:
+        def generate():
+            chunk_id = f"chatcmpl-{int(time.time())}"
+            words = response_text.split()
+            
+            openai_chunk = {
+                "id": chunk_id,
+                "object": "chat.completion.chunk",
+                "created": int(time.time()),
+                "model": request.model,
+                "choices": [{
+                    "index": 0,
+                    "delta": {"role": "assistant"},
+                    "finish_reason": None
+                }]
             }
-        ]
-    }
+            yield f"data: {json.dumps(openai_chunk)}\n\n".encode('utf-8')
+            
+            for word in words:
+                time.sleep(0.05)
+                openai_chunk = {
+                    "id": chunk_id,
+                    "object": "chat.completion.chunk",
+                    "created": int(time.time()),
+                    "model": request.model,
+                    "choices": [{
+                        "index": 0,
+                        "delta": {"content": word + " "},
+                        "finish_reason": None
+                    }]
+                }
+                yield f"data: {json.dumps(openai_chunk)}\n\n".encode('utf-8')
+            
+            openai_chunk = {
+                "id": chunk_id,
+                "object": "chat.completion.chunk",
+                "created": int(time.time()),
+                "model": request.model,
+                "choices": [{
+                    "index": 0,
+                    "delta": {},
+                    "finish_reason": "stop"
+                }]
+            }
+            yield f"data: {json.dumps(openai_chunk)}\n\n".encode('utf-8')
+            yield b"data: [DONE]\n\n"
+        
+        return StreamingResponse(
+            generate(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no"
+            }
+        )
+    else:
+        return {
+            "id": f"chatcmpl-{int(time.time())}",
+            "object": "chat.completion",
+            "created": int(time.time()),
+            "model": request.model,
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {
+                        "role": "assistant",
+                        "content": response_text
+                    },
+                    "finish_reason": "stop"
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 0,
+                "completion_tokens": len(response_text.split()),
+                "total_tokens": len(response_text.split())
+            }
+        }
 
-#=========================================================
-# Setting up the service
+class PriorityDiscoveryListener(ServiceListener):
+    def __init__(self):
+        self.priorities = set()
+        self.lock = threading.Lock()
 
-def register_zeroconfai(port: int, priority: int) -> tuple[Zeroconf, ServiceInfo]:
+    def add_service(self, zc: Zeroconf, type_: str, name: str) -> None:
+        info = zc.get_service_info(type_, name)
+        if info and info.properties:
+            priority_bytes = info.properties.get(b'priority')
+            if priority_bytes:
+                with self.lock:
+                    try:
+                        priority_value = int(priority_bytes.decode('utf-8'))
+                        self.priorities.add(priority_value)
+                    except (ValueError, UnicodeDecodeError):
+                        pass
+
+    def update_service(self, zc: Zeroconf, type_: str, name: str) -> None:
+        self.add_service(zc, type_, name)
+
+    def remove_service(self, zc: Zeroconf, type_: str, name: str) -> None:
+        pass
+
+def find_available_priority(desired_priority: int, service_type: str) -> int:
+    discovery_zc = Zeroconf()
+    listener = PriorityDiscoveryListener()
+    
+    browser = ServiceBrowser(discovery_zc, service_type, listener)
+    
+    time.sleep(2.0)
+    
+    browser.cancel()
+    discovery_zc.close()
+    
+    current_priority = desired_priority
+    with listener.lock:
+        while current_priority in listener.priorities:
+            print(f"Priority {current_priority} is already in use, trying {current_priority + 1}...")
+            current_priority += 1
+    
+    if current_priority != desired_priority:
+        print(f"Adjusted priority from {desired_priority} to {current_priority}")
+    
+    return current_priority
+
+def register_zeroconfai(port: int, priority: int, service_type: str) -> tuple[Zeroconf, ServiceInfo]:
+    actual_priority = find_available_priority(priority, service_type)
+    
     zeroconf = Zeroconf()
 
     host = socket.gethostname()
     host_ip = socket.gethostbyname(host)
 
-    service_type = "_zeroconfai._tcp.local."
-    service_name = f"Fallback.{service_type}" #person who sets up the service should be able to change this to whatever they want
+    service_name = f"Fallback.{service_type}"
 
-    info = ServiceInfo(type_=service_type, name=service_name, port=port, addresses=[socket.inet_aton(host_ip)], server=f"{host}.local.", properties={'version': '1.0', 'api': 'OpenRouter'}, priority=priority)
+    info = ServiceInfo(
+        type_=service_type, 
+        name=service_name, 
+        port=port, 
+        addresses=[socket.inet_aton(host_ip)], 
+        server=f"{host}.local.", 
+        properties={
+            'version': '1.0', 
+            'api': 'OpenRouter',
+            'priority': str(actual_priority)
+        },
+        priority=actual_priority
+    )
 
     zeroconf.register_service(info)
 
-    print(f"{service_name} has been registered.")
+    print(f"{service_name} has been registered with priority {actual_priority}.")
 
     return zeroconf, info
 
-
-#=============================================
 def find_port_number(start_port=8080, max_attempts=20) -> int:
     for port in range(start_port, start_port + max_attempts):
         try:
@@ -100,7 +224,6 @@ def find_port_number(start_port=8080, max_attempts=20) -> int:
         except OSError:
             continue
     raise RuntimeError(f"There are no available ports in range {start_port} - {start_port + max_attempts}, please try again by specifying port number with --port.")
-#=============================================
 
 def main():
     parser = argparse.ArgumentParser(description="ZeroconfAI Fallback Proxy Server")
@@ -110,9 +233,10 @@ def main():
     args = parser.parse_args()
     
     port = args.port if args.port else find_port_number()
-    print(f"Starting Fallback proxy on {args.host}:{port}")
+    print(f"Starting Fallback proxy on {args.host}:{port} with desired priority {args.priority}...")
     
-    zeroconf, service_info = register_zeroconfai(port, priority=args.priority)
+    service_type = "_zeroconfai._tcp.local."
+    zeroconf, service_info = register_zeroconfai(port, priority=args.priority, service_type=service_type)
     
     try:
         uvicorn.run(app, host=args.host, port=port)
