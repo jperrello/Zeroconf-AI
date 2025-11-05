@@ -52,7 +52,7 @@ class UserAIRequest(BaseModel):
 async def health() -> dict:
     return {"status": "ok", "provider": "Google Gemini"}
 
-@app.get("/v1/models", description="Get's the available models")
+@app.get("/v1/models", description="Get's the available models") # TODO: get the models from openrouter instead of hardcoding gemini
 async def get_models() -> dict:
     models = [{"id": name, "object": "model", "owned_by": "google"} 
               for name in Gemini_Models.keys()]
@@ -216,7 +216,7 @@ def register_zeroconfai(port: int, priority: int, service_type: str) -> tuple[Ze
         properties={
             'version': '1.0', 
             'api': 'OpenRouter',
-            'priority': str(actual_priority) # Store priority as a string property
+            'priority': str(actual_priority)  
         },
         priority=actual_priority # Also set as ServiceInfo.priority field
     )
