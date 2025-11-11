@@ -19,7 +19,7 @@ Her options suck:
 
 ## Now Meet Derek, The Home IT Wizard
 
-Derek already pays for OpenRouter/Claude/OpenAI. He uses it for work, for fun, for arguing with strangers on the internet about Star Trek.
+Derek already pays for OpenRouter/Claude/OpenAI. He uses it for work, for fun, for randomly inserting references to _Hollow Knight_ into his code.
 
 He thinks: "I'm already paying for this. Why can't my family's apps just... use it?"
 
