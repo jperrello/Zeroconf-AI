@@ -112,9 +112,8 @@ So now you can. While watching any video in VLC, open the extension and:
 cd vlc_extension && install_batch.bat
 ```
 
-Then in VLC: View → VLC Extensions → ZeroConf AI Chat
+Then in VLC: View → AI chat ...
 
-It's like having a conversation about your media library with someone who's actually watching along with you.
 
 ## Repository Structure
 
