@@ -49,11 +49,6 @@ This repository contains a working ZeroConf AI implementation that:
 - Full streaming support for real-time responses
 - Automatic priority negotiation (defaults to priority 50)
 
-**OpenRouter V2 (`servers/openrouter_v2.py`)**
-- Enhanced version with multimodal support (text, images, PDFs)
-- Better error handling and response formatting
-- Simplified model listing
-- Perfect for advanced use cases
 
 **Ollama Server (`servers/ollama_server.py`)**
 - Proxies to your local Ollama installation
@@ -120,8 +115,7 @@ Then in VLC: View → AI chat ...
 ```
 Zeroconf-AI/
 ├── servers/              # AI service servers
-│   ├── openrouter_server.py     # Main OpenRouter proxy (200+ models)
-│   ├── openrouter_v2.py         # Enhanced multimodal version
+│   ├── openrouter_server.py     # OpenRouter proxy (200+ models)
 │   ├── ollama_server.py         # Local Ollama proxy
 │   └── fallback_server.py       # Testing/humor server
 ├── clients/              # Client implementations
