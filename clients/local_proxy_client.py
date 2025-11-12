@@ -14,7 +14,7 @@ import requests
 from zeroconf import ServiceListener, ServiceBrowser, Zeroconf
 import logging
 import json
-import asyncio
+
 
 #used for when i was debugging, there are so many logs now that I am just keeping them. they are going to be commented out for now.
 logging.basicConfig(
@@ -25,7 +25,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 @dataclass
-class Service:
+class AIService:
     name: str
     address: str
     port: int
@@ -41,7 +41,7 @@ class Service:
 
 class ServiceDiscovery:
     def __init__(self):
-        self.services: Dict[str, Service] = {}
+        self.services: Dict[str, AIService] = {}
         self.lock = threading.Lock()
         self.zc = Zeroconf()
         self.listener = self._create_listener()
@@ -59,7 +59,7 @@ class ServiceDiscovery:
                     priority = info.priority if info.priority else 50
 
                     with discovery.lock:
-                        discovery.services[name] = Service(
+                        discovery.services[name] = AIService(
                             name=name,
                             address=address,
                             port=port,
@@ -78,11 +78,11 @@ class ServiceDiscovery:
 
         return Listener()
 
-    def get_all_services(self) -> List[Service]:
+    def get_all_services(self) -> List[AIService]:
         with self.lock:
             return list(self.services.values())
 
-    def get_service(self, name: str) -> Optional[Service]:
+    def get_service(self, name: str) -> Optional[AIService]:
         with self.lock:
             return self.services.get(name)
 
@@ -162,7 +162,7 @@ class ModelRouter:
         
         return {"models": all_models}
 
-    def get_service_for_model(self, model_id: str) -> Optional[Service]:
+    def get_service_for_model(self, model_id: str) -> Optional[AIService]:
         services = self.discovery.get_all_services()
         healthy_services = [s for s in services if s.is_healthy]
         

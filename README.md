@@ -39,42 +39,102 @@ This repository contains a working ZeroConf AI implementation that:
 
 ## What's In This Repo
 
-### The Servers
+### The Servers (`servers/`)
 
-**Gemini Server (`gemini_server.py`)**
-- FastAPI server that proxies to Google's Gemini models via OpenRouter
-- Supports Gemini 2.0 Flash, 2.5 Flash, 2.5 Pro, and image preview models
+**OpenRouter Server (`servers/openrouter_server.py`)**
+- FastAPI server that proxies to OpenRouter API (access to 200+ AI models)
+- **Dynamic model discovery** - automatically fetches and caches available models every hour
+- Supports all OpenRouter models: Claude, GPT-4, Gemini, Llama, and more
+- Includes special "openrouter/auto" model for intelligent routing
 - Full streaming support for real-time responses
 - Automatic priority negotiation (defaults to priority 50)
 
-**Ollama Server (`ollama_server.py`)**
+**OpenRouter V2 (`servers/openrouter_v2.py`)**
+- Enhanced version with multimodal support (text, images, PDFs)
+- Better error handling and response formatting
+- Simplified model listing
+- Perfect for advanced use cases
+
+**Ollama Server (`servers/ollama_server.py`)**
 - Proxies to your local Ollama installation
 - Automatically discovers whatever models you have installed
 - Zero external API costs - it's all running on your hardware
 - Perfect for offline work or privacy-sensitive tasks
 - Converts Ollama's native format to OpenAI-compatible responses
 
-**Fallback Server (`fallback_server.py`)**
+**Fallback Server (`servers/fallback_server.py`)**
 - The world's most honest server
 - Model literally named "dont_pick_me"
 - If you actually pick it, it roasts you
 - Great for testing client failover logic
 - Contains the condensed wisdom of ignoring clear warnings
 
-### The Clients
+### The Clients (`clients/`)
 
-**Simple Chat Client (`simple_chat_client.py`)**
+**Simple Chat Client (`clients/simple_chat_client.py`)**
 - Bare-bones example of service discovery
 - Automatically finds the highest-priority service
 - Basic chat loop with history
 - Under 100 lines - read it to understand the protocol
 
-**Local Proxy Client (`local_proxy_client.py`)**
+**Local Proxy Client (`clients/local_proxy_client.py`)**
 - Full-featured client with health monitoring
 - Discovers ALL services on your network
 - Automatic failover if a service goes down
 - Priority-based selection (use local before cloud, or configure your own preferences)
 - Maintains chat history across provider switches
+
+**File Upload Client (`clients/file_upload_client.py`)**
+- Advanced multimodal client supporting file uploads
+- Handles text files, images (PNG, JPEG, GIF, WebP), and PDFs
+- Token tracking and cost estimation
+- Automatic MIME type detection
+- Perfect for "analyze this image" or "summarize this document" use cases
+
+### VLC Extension (`vlc_extension/`)
+
+**Wait, VLC? Like, the media player?**
+
+Yes! Derek thought: "What if I could ask AI questions about the movie I'm watching?"
+
+So now you can. While watching any video in VLC, open the extension and:
+- Ask questions about the content you're watching
+- Get context-aware responses (AI knows what media file you're playing)
+- Automatically discovers AI services on your network
+- Switch between services right in the UI
+
+**Installation:**
+```bash
+# Linux/macOS
+# Working on an install.sh file right now, but for now drag and drop lua file into vlc/extensions folder
+
+# Windows
+cd vlc_extension && install_batch.bat
+```
+
+Then in VLC: View → VLC Extensions → ZeroConf AI Chat
+
+It's like having a conversation about your media library with someone who's actually watching along with you.
+
+## Repository Structure
+
+```
+Zeroconf-AI/
+├── servers/              # AI service servers
+│   ├── openrouter_server.py     # Main OpenRouter proxy (200+ models)
+│   ├── openrouter_v2.py         # Enhanced multimodal version
+│   ├── ollama_server.py         # Local Ollama proxy
+│   └── fallback_server.py       # Testing/humor server
+├── clients/              # Client implementations
+│   ├── simple_chat_client.py    # Basic example (<100 lines)
+│   ├── local_proxy_client.py    # Full-featured with failover
+│   └── file_upload_client.py    # Multimodal file support
+├── vlc_extension/        # VLC Media Player extension
+│   ├── zeroconf_ai_chat.lua     # VLC extension UI
+│   ├── vlc_discovery_bridge.py  # Python backend
+│   └── install_batch.bat        # Windows installer
+└── .env                  # Your OpenRouter API key goes here
+```
 
 ## Quick Start
 
@@ -83,30 +143,34 @@ This repository contains a working ZeroConf AI implementation that:
 1. **Set up your environment:**
 ```bash
 git clone https://github.com/jperrello/Zeroconf-AI.git
-cd zeroconf-ai
+cd Zeroconf-AI
 
+# Basic dependencies (required for all servers/clients)
 pip install fastapi uvicorn zeroconf python-dotenv requests pydantic
+
+# Optional: For file upload client with multimodal support
+pip install tiktoken Pillow
 ```
 
-2. **For Gemini Server:**
+2. **For OpenRouter Server (access to 200+ AI models):**
 ```bash
 echo "OPENROUTER_API_KEY=your-key-here" > .env
 echo "OPENROUTER_BASE_URL=https://openrouter.ai/api/v1/chat/completions" >> .env
 
-python gemini_server.py
-python gemini_server.py --priority 10
-python gemini_server.py --port 8081 --priority 5
+python servers/openrouter_server.py
+python servers/openrouter_server.py --priority 10
+python servers/openrouter_server.py --port 8081 --priority 5
 ```
 
 3. **For Ollama Server (requires Ollama running locally):**
 ```bash
-python ollama_server.py
-python ollama_server.py --priority 100
+python servers/ollama_server.py
+python servers/ollama_server.py --priority 100
 ```
 
 4. **For Fallback Server (for testing or amusement):**
 ```bash
-python fallback_server.py --priority 999
+python servers/fallback_server.py --priority 999
 ```
 
 ### Priority System
@@ -115,24 +179,34 @@ Lower numbers = higher priority. Clients pick the lowest-priority service availa
 
 Example setup:
 - Local Ollama: priority 10 (use this first - it's free and private)
-- Gemini via OpenRouter: priority 50 (use if Ollama is down)
+- OpenRouter: priority 50 (use if Ollama is down)
 - Fallback server: priority 999 (only if you're truly desperate)
 
 Priorities are auto-negotiated. If you try to start two services with the same priority, the second one automatically increments until it finds an available slot. No conflicts, no drama.
 
 ### Client Usage
 
-**Simple client:**
-```python
-python simple_chat_client.py
+**Simple client (basic chat):**
+```bash
+python clients/simple_chat_client.py
 ```
 
-**Advanced client:**
+**Advanced client with failover:**
+```bash
+python clients/local_proxy_client.py
+```
+
+**File upload client (multimodal):**
+```bash
+python clients/file_upload_client.py
+```
+
+**Using clients in your code:**
 ```python
-from local_proxy_client import ServiceManager, ZeroconfAIClient
+from clients.local_proxy_client import ServiceManager, ZeroconfAIClient
 
 manager = ServiceManager()
-time.sleep(2)
+time.sleep(2)  # Give it a moment to discover services
 
 for url, name in manager.items():
     client = ZeroconfAIClient(manager, url)
@@ -151,7 +225,7 @@ When you run servers:
 - If a service goes down, clients seamlessly switch to the next-best option
 
 **Example network:**
-- Derek's Raspberry Pi: Running Gemini server (priority 50)
+- Derek's Raspberry Pi: Running OpenRouter server (priority 50)
 - Derek's gaming PC: Running Ollama server (priority 10)
 - Derek's definitely-not-overkill homelab: Running fallback server (priority 999)
 
@@ -177,13 +251,13 @@ All of Derek's family's apps automatically use the gaming PC first (priority 10)
 }
 ```
 
-All servers speak OpenAI-compatible API. Whether you're hitting Gemini, Ollama, or even the sarcastic fallback server, the request/response format is identical. This means your client code works with ANY ZeroConf AI server without modification.
+All servers speak OpenAI-compatible API. Whether you're hitting OpenRouter, Ollama, or even the sarcastic fallback server, the request/response format is identical. This means your client code works with ANY ZeroConf AI server without modification.
 
 
 ## FAQ
 
 **"Wait, I can mix cloud and local AI?"**
-Yes! Run Ollama locally for free/private stuff, plus a cloud proxy for heavy lifting. Clients pick the best one automatically.
+Yes! Run Ollama locally for free/private stuff, plus OpenRouter for cloud access to 200+ models. Clients pick the best one automatically.
 
 **"What if multiple people try to use my Ollama at once?"**
 Set Ollama to lower priority (higher number). Clients will prefer your cloud services when local is busy.
@@ -193,8 +267,11 @@ It's as secure as your home network. If you trust devices on your WiFi, you can 
 
 **"What about costs?"**
 Ollama server: Free (uses your hardware)
-Gemini server: You pay for your own OpenRouter usage
+OpenRouter server: You pay for your own OpenRouter usage
 Your whole network shares one account instead of everyone getting their own.
+
+**"What's the VLC extension for?"**
+Ever wanted to ask questions about the movie you're watching? Now you can. The VLC extension lets you chat with AI while watching media, with full context awareness of what you're viewing.
 
 **"Can I run ALL the servers?"**
 Absolutely! Run one of each, give them different priorities, and let clients pick the best one. That's the whole point.
@@ -207,10 +284,4 @@ Depends on your Ollama configuration, but typically it'll queue. Or just run ano
 
 ---
 
-**Not available in stores!** *(Available on GitHub)*
-
-**But wait, there's more!** *(There isn't. This is it.)*
-
----
-
-Built with ❤️ and mild frustration.
+Feel free to make a PR or reach out for any questions.
