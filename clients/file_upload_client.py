@@ -82,7 +82,7 @@ class FileContextManager:
                                                     '.h', '.rs', '.go', '.rb', '.php', '.swift',
                                                     '.kt', '.scala', '.sh', '.bash', '.md', '.txt',
                                                     '.json', '.xml', '.yaml', '.yml', '.toml', '.ini',
-                                                    '.conf', '.log', '.sql', '.html', '.css', '.scss']):
+                                                    '.conf', '.log', '.sql', '.html', '.css', '.scss', '.lua']):
             return 'text', mime_type
         
         image_types = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']

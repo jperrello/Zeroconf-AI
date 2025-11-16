@@ -1,11 +1,11 @@
 function descriptor()
     return {
         title = "ZeroConf AI Chat",
-        version = "1.5",
+        version = "1.5.1",
         author = "Joey Perrello",
         url = "https://github.com/yourrepo/zeroconfai",
         shortdesc = "AI chat with automatic service discovery",
-        description = "Chat with AI about your media using automatic ZeroConf service discovery",
+        description = "Chat with AI about your media using automatic ZeroConf service discovery - Fixed race condition and Windows launch issues",
         capabilities = {"input-listener", "meta-listener"}
     }
 end
@@ -27,14 +27,26 @@ available_services = {}
 selected_service_index = nil
 selected_model = nil
 
+-- Bridge process management
+bridge_process = nil
+bridge_port_file = nil
+bridge_launched = false
+
 function activate()
     vlc.msg.info("[ZeroConf AI] Extension activated")
+
+    -- Try to launch the bundled bridge executable
+    launch_bridge()
+
     create_dialog()
     check_bridge_status()
     update_media_context()
 end
 
 function deactivate()
+    -- Shutdown the bridge if we launched it
+    shutdown_bridge()
+
     if dlg then
         dlg:delete()
         dlg = nil
@@ -97,26 +109,58 @@ end
 
 function check_bridge_status()
     debug_label:set_text("Debug: Checking bridge...")
-    local response = http_get(bridge_url .. "/v1/health")
-    if response then
-        local health = parse_json(response)
-        if health and health.status == "ready" then
-            local msg = string.format("Connected - %d service(s) available", 
-                                     health.healthy_services or 0)
-            status_label:set_text(msg)
-            debug_label:set_text("Debug: Bridge OK")
-            refresh_services()
-        elseif health and health.status == "no_services" then
-            status_label:set_text("Bridge connected but no AI services found")
-            debug_label:set_text("Debug: No AI services")
-        else
-            status_label:set_text("Bridge in unknown state")
-            debug_label:set_text("Debug: Unknown state")
+
+    -- Retry connection with exponential backoff
+    -- Note: The bridge should already be ready by the time we call this,
+    -- but we retry in case of transient network issues
+    local max_retries = 7
+    local retry_delays = {0.1, 0.2, 0.5, 1.0, 1.5, 2.0, 2.5}  -- seconds
+
+    for retry = 1, max_retries do
+        vlc.msg.info("[ZeroConf AI] Health check attempt " .. retry .. "/" .. max_retries)
+        local response = http_get(bridge_url .. "/v1/health")
+        if response then
+            local health = parse_json(response)
+            if health and health.status == "ready" then
+                local msg = string.format("Connected - %d service(s) available",
+                                         health.healthy_services or 0)
+                status_label:set_text(msg)
+                debug_label:set_text("Debug: Bridge OK")
+                vlc.msg.info("[ZeroConf AI] Bridge connection successful!")
+                refresh_services()
+                return
+            elseif health and health.status == "no_services" then
+                status_label:set_text("Bridge connected but no AI services found")
+                debug_label:set_text("Debug: No AI services")
+                vlc.msg.info("[ZeroConf AI] Bridge connected, waiting for AI services...")
+                return
+            elseif health and health.status == "starting" then
+                -- Bridge is still initializing
+                vlc.msg.info("[ZeroConf AI] Bridge still starting, waiting...")
+                status_label:set_text("Bridge initializing...")
+                debug_label:set_text("Debug: Bridge starting")
+                -- Continue to retry
+            elseif health and health.status then
+                status_label:set_text("Bridge in state: " .. health.status)
+                debug_label:set_text("Debug: " .. health.status)
+                vlc.msg.info("[ZeroConf AI] Bridge state: " .. health.status)
+                return
+            end
         end
-    else
-        status_label:set_text("Cannot connect to bridge at " .. bridge_url)
-        debug_label:set_text("Debug: Bridge unreachable")
+
+        -- If we get here, connection failed - retry with delay
+        if retry < max_retries then
+            vlc.msg.info("[ZeroConf AI] Connection attempt " .. retry .. " failed, retrying in " .. retry_delays[retry] .. "s...")
+            local delay = retry_delays[retry]
+            local start = os.clock()
+            while os.clock() - start < delay do end
+        end
     end
+
+    -- All retries exhausted
+    vlc.msg.err("[ZeroConf AI] Bridge connection failed after " .. max_retries .. " attempts")
+    status_label:set_text("Cannot connect to bridge at " .. bridge_url)
+    debug_label:set_text("Debug: Bridge unreachable after retries")
 end
 
 function refresh_services()
@@ -734,6 +778,190 @@ function format_time(microseconds)
         return string.format("%d:%02d:%02d", hours, mins, secs)
     else
         return string.format("%d:%02d", mins, secs)
+    end
+end
+
+function detect_os()
+    local sep = package.config:sub(1, 1)
+    if sep == "\\" then
+        return "windows"
+    else
+        -- Try to detect macOS vs Linux
+        local handle = io.popen("uname -s 2>/dev/null")
+        if handle then
+            local uname = handle:read("*a")
+            handle:close()
+            if uname and uname:match("Darwin") then
+                return "macos"
+            end
+        end
+        return "linux"
+    end
+end
+
+function get_extension_dir()
+    -- Get the directory where this Lua script is located
+    local info = debug.getinfo(1, "S")
+    if info and info.source then
+        local script_path = info.source:match("@?(.*)")
+        if script_path then
+            -- Extract directory from the script path
+            local dir = script_path:match("(.*/)")
+            if not dir then
+                dir = script_path:match("(.*\\)")
+            end
+            return dir or ""
+        end
+    end
+    return ""
+end
+
+function get_temp_dir()
+    local os_type = detect_os()
+    if os_type == "windows" then
+        return os.getenv("TEMP") or os.getenv("TMP") or "C:\\Temp"
+    else
+        return os.getenv("TMPDIR") or "/tmp"
+    end
+end
+
+function launch_bridge()
+    local os_type = detect_os()
+    local extension_dir = get_extension_dir()
+
+    vlc.msg.info("[ZeroConf AI] OS detected: " .. os_type)
+    vlc.msg.info("[ZeroConf AI] Extension dir: " .. extension_dir)
+
+    -- Determine the bridge executable path
+    local bridge_exe
+    if os_type == "windows" then
+        bridge_exe = extension_dir .. "bridge\\vlc_discovery_bridge.exe"
+    else
+        bridge_exe = extension_dir .. "bridge/vlc_discovery_bridge"
+    end
+
+    -- Check if the bridge executable exists
+    local file = io.open(bridge_exe, "r")
+    if not file then
+        vlc.msg.warn("[ZeroConf AI] Bridge executable not found at: " .. bridge_exe)
+        vlc.msg.info("[ZeroConf AI] Will use external bridge if running")
+        return
+    end
+    file:close()
+
+    -- Create port file path
+    local temp_dir = get_temp_dir()
+    bridge_port_file = temp_dir .. (os_type == "windows" and "\\" or "/") .. "vlc_bridge_port.txt"
+
+    vlc.msg.info("[ZeroConf AI] Launching bridge: " .. bridge_exe)
+    vlc.msg.info("[ZeroConf AI] Port file: " .. bridge_port_file)
+
+    -- Clean up old port file if it exists
+    os.remove(bridge_port_file)
+
+    -- Launch the bridge with port file argument
+    -- CRITICAL: Use os.execute with proper backgrounding, NOT io.popen
+    local cmd
+    local exec_result
+    if os_type == "windows" then
+        -- Use 'start /B' to run in background without opening new window
+        cmd = string.format('start /B "" "%s" --port-file "%s"', bridge_exe, bridge_port_file)
+        exec_result = os.execute(cmd)
+    else
+        -- Unix/Linux/macOS: use & to background
+        cmd = string.format('"%s" --port-file "%s" > /dev/null 2>&1 &', bridge_exe, bridge_port_file)
+        exec_result = os.execute(cmd)
+    end
+
+    if exec_result == nil or exec_result == false then
+        vlc.msg.err("[ZeroConf AI] Failed to launch bridge process")
+        return
+    end
+
+    vlc.msg.info("[ZeroConf AI] Bridge process launched")
+    bridge_launched = true
+
+    -- Wait for the port file to be created AND valid (max 10 seconds)
+    local max_wait = 100  -- 100 * 100ms = 10 seconds
+    local wait_count = 0
+    while wait_count < max_wait do
+        local port_file = io.open(bridge_port_file, "r")
+        if port_file then
+            local content = port_file:read("*all")
+            port_file:close()
+            if content and content ~= "" then
+                -- Parse host:port from file
+                local host, port = content:match("([^:]+):(%d+)")
+                if host and port then
+                    bridge_url = "http://" .. host .. ":" .. port
+                    vlc.msg.info("[ZeroConf AI] Port file found: " .. bridge_url)
+
+                    -- CRITICAL: Add additional delay after port file appears
+                    -- The bridge writes the port file AFTER the server is ready,
+                    -- but we add a small safety margin for network stack initialization
+                    vlc.msg.info("[ZeroConf AI] Waiting for server to fully initialize...")
+                    local safety_delay = 0.5  -- 500ms safety margin
+                    local start = os.clock()
+                    while os.clock() - start < safety_delay do end
+
+                    vlc.msg.info("[ZeroConf AI] Bridge should be ready")
+                    return
+                end
+            end
+        end
+        -- Sleep for 100ms
+        local start = os.clock()
+        while os.clock() - start < 0.1 do end
+        wait_count = wait_count + 1
+    end
+
+    vlc.msg.warn("[ZeroConf AI] Timeout waiting for bridge to start")
+    vlc.msg.warn("[ZeroConf AI] Check VLC messages for errors or try running bridge manually")
+end
+
+function shutdown_bridge()
+    if not bridge_launched then
+        return
+    end
+
+    vlc.msg.info("[ZeroConf AI] Shutting down bridge...")
+
+    -- Send shutdown request to bridge
+    local shutdown_url = bridge_url .. "/shutdown"
+    local success = pcall(function()
+        http_post(shutdown_url)
+    end)
+
+    if success then
+        vlc.msg.info("[ZeroConf AI] Bridge shutdown signal sent")
+    else
+        vlc.msg.warn("[ZeroConf AI] Failed to send shutdown signal to bridge")
+    end
+
+    -- Clean up port file
+    if bridge_port_file then
+        os.remove(bridge_port_file)
+    end
+
+    bridge_launched = false
+    bridge_process = nil
+end
+
+function http_post(url)
+    -- Simple POST request using stream
+    -- For VLC Lua, we can use io.popen with curl if available, or just ignore
+    -- Since the bridge will exit anyway when VLC closes
+    local os_type = detect_os()
+    local cmd
+    if os_type == "windows" then
+        cmd = string.format('powershell -Command "Invoke-WebRequest -Uri \'%s\' -Method POST" 2>nul', url)
+    else
+        cmd = string.format('curl -X POST "%s" 2>/dev/null', url)
+    end
+
+    local handle = io.popen(cmd)
+    if handle then
+        handle:close()
     end
 end
 

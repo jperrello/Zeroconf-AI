@@ -2,6 +2,8 @@ import socket
 import threading
 import time
 import argparse
+import os
+import sys
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -257,11 +259,11 @@ async def health():
 async def get_models():
     if not bridge_manager:
         raise HTTPException(status_code=503, detail="Discovery not initialized")
-    
+
     services = bridge_manager.get_healthy_services()
     if not services:
         raise HTTPException(status_code=503, detail="No AI services available")
-    
+
     all_models = []
     for service in services:
         for model_id in service.available_models:
@@ -270,8 +272,22 @@ async def get_models():
                 "object": "model",
                 "owned_by": service.name
             })
-    
+
     return {"models": all_models}
+
+@app.post("/shutdown")
+async def shutdown():
+    """Shutdown endpoint for clean bridge termination from Lua"""
+    logger.info("Shutdown requested")
+
+    # Schedule shutdown after returning response
+    def stop_server():
+        time.sleep(0.5)  # Give time for response to be sent
+        os._exit(0)
+
+    threading.Thread(target=stop_server, daemon=True).start()
+
+    return {"status": "shutting_down"}
 
 # vlc's lua can't do post easily, so we support both get and post for chat completions
 @app.get("/v1/chat/completions")
@@ -383,22 +399,116 @@ def find_port_number(host: str, start_port: int = 9876, max_attempts: int = 20) 
         f"No available ports in range {start_port} - {start_port + max_attempts}"
     )
 
+def wait_for_server_ready(host: str, port: int, timeout: int = 15) -> bool:
+    """Poll the server until it's ready to accept connections"""
+    url = f"http://{host}:{port}/v1/health"
+    start_time = time.time()
+    attempt = 0
+
+    logger.info(f"Waiting for server to be ready at {url}...")
+
+    while time.time() - start_time < timeout:
+        attempt += 1
+        try:
+            response = requests.get(url, timeout=1)
+            if response.status_code == 200:
+                data = response.json()
+                logger.info(f"Server is ready! (attempt {attempt}, status: {data.get('status', 'unknown')})")
+                # Extra verification - make sure we can actually handle requests
+                time.sleep(0.2)  # Small safety margin
+                return True
+            else:
+                logger.debug(f"Server responded but not ready (status {response.status_code})")
+        except requests.exceptions.ConnectionError:
+            # Server not ready yet, continue waiting
+            logger.debug(f"Connection attempt {attempt} failed (server not ready)")
+        except requests.exceptions.Timeout:
+            logger.debug(f"Connection attempt {attempt} timed out")
+        except Exception as e:
+            logger.debug(f"Connection attempt {attempt} error: {e}")
+
+        time.sleep(0.3)  # Wait 300ms between attempts
+
+    logger.error(f"Server failed to become ready after {timeout}s ({attempt} attempts)")
+    return False
+
 def main():
     parser = argparse.ArgumentParser(description="VLC AI Discovery Bridge")
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Host to bind to")
     parser.add_argument("--port", type=int, default=None, help="Port to bind to (auto-detect if not specified)")
+    parser.add_argument("--port-file", type=str, default=None, help="File to write host:port to for Lua discovery")
     args = parser.parse_args()
-    
-    port = args.port if args.port else find_port_number(args.host)
-    
+
+    try:
+        port = args.port if args.port else find_port_number(args.host)
+    except RuntimeError as e:
+        logger.error(f"Failed to find available port: {e}")
+        sys.exit(1)
+
     print("=" * 50)
     print("  VLC AI Discovery Bridge")
     print("=" * 50)
     print(f"Starting on {args.host}:{port}")
     print(f"Discovering ZeroConf AI services...")
+    if args.port_file:
+        print(f"Port file: {args.port_file}")
     print()
-    
-    uvicorn.run(app, host=args.host, port=port, log_level="info")
+
+    # Start uvicorn in a background thread
+    logger.info(f"Starting FastAPI server on {args.host}:{port}...")
+    server_thread = threading.Thread(
+        target=lambda: uvicorn.run(
+            app,
+            host=args.host,
+            port=port,
+            log_level="info",
+            access_log=False  # Reduce log noise
+        ),
+        daemon=True
+    )
+    server_thread.start()
+
+    # CRITICAL: Wait for the server to be ready before writing the port file
+    # This ensures that when Lua reads the port file, the server is guaranteed to be accepting connections
+    logger.info("Waiting for server to be ready...")
+    if not wait_for_server_ready(args.host, port, timeout=15):
+        logger.error("Server failed to start within timeout period")
+        logger.error("Check for port conflicts or firewall issues")
+        sys.exit(1)
+
+    # NOW write port information to file (server is confirmed ready)
+    # Lua will wait for this file to appear, then wait an additional safety margin
+    if args.port_file:
+        try:
+            # Ensure directory exists
+            port_file_dir = os.path.dirname(args.port_file)
+            if port_file_dir and not os.path.exists(port_file_dir):
+                os.makedirs(port_file_dir, exist_ok=True)
+
+            with open(args.port_file, 'w') as f:
+                f.write(f"{args.host}:{port}")
+            logger.info(f"Port information written to {args.port_file}")
+            logger.info("Bridge is ready for VLC connections!")
+        except Exception as e:
+            logger.error(f"Failed to write port file: {e}")
+            sys.exit(1)
+    else:
+        logger.info("Bridge is ready!")
+
+    # Keep the main thread alive while server runs
+    logger.info("Bridge running. Press Ctrl+C to stop.")
+    try:
+        server_thread.join()
+    except KeyboardInterrupt:
+        logger.info("Shutting down...")
+    finally:
+        # Clean up port file on exit if it was created
+        if args.port_file and os.path.exists(args.port_file):
+            try:
+                os.remove(args.port_file)
+                logger.info(f"Cleaned up port file {args.port_file}")
+            except Exception as e:
+                logger.warning(f"Failed to clean up port file: {e}")
 
 if __name__ == "__main__":
     main()
