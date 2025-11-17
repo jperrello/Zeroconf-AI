@@ -55,8 +55,8 @@ class ServiceDiscovery:
         self.lock = threading.Lock()
         self.zc = Zeroconf()
         self.listener = self._create_listener()
-        # this is where we actively listen for _zeroconfai._tcp.local. broadcasts on the network
-        self.browser = ServiceBrowser(self.zc, "_zeroconfai._tcp.local.", self.listener)
+        # this is where we actively listen for _saturn._tcp.local. broadcasts on the network
+        self.browser = ServiceBrowser(self.zc, "_saturn._tcp.local.", self.listener)
     
     def _create_listener(self) -> ServiceListener:
         discovery = self
@@ -207,7 +207,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="VLC AI Discovery Bridge",
-    description="Bridge between VLC Lua extension and ZeroConf AI services",
+    description="Bridge between VLC Lua extension and Saturn services",
     version="1.0",
     lifespan=lifespan
 )
@@ -449,7 +449,7 @@ def main():
     print("  VLC AI Discovery Bridge")
     print("=" * 50)
     print(f"Starting on {args.host}:{port}")
-    print(f"Discovering ZeroConf AI services...")
+    print(f"Discovering Saturn services...")
     if args.port_file:
         print(f"Port file: {args.port_file}")
     print()

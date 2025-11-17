@@ -31,8 +31,8 @@ def get_ollama_models() -> List[Dict]:
     return []
 
 app = FastAPI(
-    title="ZeroconfAI Ollama",
-    description="Zeroconf AI allows you to connect to llm services through your local network. This is an example of an Ollama proxy server.",
+    title="Saturn Ollama",
+    description="Saturn allows you to connect to llm services through your local network. This is an example of an Ollama proxy server.",
     summary="Get LLMs anywhere you go!",
     version="1.0",
     contact={
@@ -273,7 +273,7 @@ def find_available_priority(desired_priority: int, service_type: str) -> int:
     
     return current_priority
 
-def register_zeroconfai(port: int, priority: int, service_type: str) -> tuple[Zeroconf, ServiceInfo]:
+def register_saturn(port: int, priority: int, service_type: str) -> tuple[Zeroconf, ServiceInfo]:
     actual_priority = find_available_priority(priority, service_type)
     
     zeroconf = Zeroconf()
@@ -316,17 +316,17 @@ def find_port_number(host: str, start_port=8080, max_attempts=20) -> int:
         f"No available ports in range {start_port} - {start_port + max_attempts}")
 
 def main():
-    parser = argparse.ArgumentParser(description="ZeroconfAI Ollama Proxy Server")
+    parser = argparse.ArgumentParser(description="Saturn Ollama Proxy Server")
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=None)
     parser.add_argument("--priority", type=int, default=50)
     args = parser.parse_args()
-    
+
     port = args.port if args.port else find_port_number(args.host)
     print(f"Starting Ollama proxy on {args.host}:{port} with desired priority {args.priority}...")
 
-    service_type = "_zeroconfai._tcp.local."
-    zeroconf, service_info = register_zeroconfai(port, priority=args.priority, service_type=service_type)
+    service_type = "_saturn._tcp.local."
+    zeroconf, service_info = register_saturn(port, priority=args.priority, service_type=service_type)
 
     try:
         uvicorn.run(app, host=args.host, port=port)

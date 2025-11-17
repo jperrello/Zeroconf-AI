@@ -1,9 +1,9 @@
-# ZeroConf AI: Technical Design Fiction
+# Saturn: Technical Design Fiction
 
 ## Core Protocol Design
 
 ### mDNS Service Discovery
-- **Service Type**: `_zeroconfai._tcp.local.`
+- **Service Type**: `_saturn._tcp.local.`
 - **Port Range**: 8000-9000 (configurable)
 - **TXT Record Fields**:
   - `version=1.0` - Protocol version
@@ -160,7 +160,7 @@ usage_tracking:
 ## Network Architecture
 
 ### Discovery Flow
-1. Client broadcasts mDNS query for `_zeroconfai._tcp.local.`
+1. Client broadcasts mDNS query for `_saturn._tcp.local.`
 2. Servers respond with TXT records + IP addresses
 3. Client queries `/v1/health` to verify reachability
 4. Client caches provider list with 5min TTL

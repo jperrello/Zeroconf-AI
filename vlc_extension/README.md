@@ -1,4 +1,4 @@
-# VLC ZeroConf AI Extension - Build Instructions
+# VLC Saturn Extension - Build Instructions
 
 ## Overview
 
@@ -8,7 +8,7 @@ This VLC extension has been upgraded to use PyInstaller to bundle the discovery 
 
 ```
 vlc_extension/
-├── zeroconf_ai_chat.lua          # VLC extension (UI and logic)
+├── saturn_chat.lua          # VLC extension (UI and logic)
 ├── vlc_discovery_bridge.py       # Python bridge (source code)
 ├── vlc_discovery_bridge.spec     # PyInstaller spec file
 ├── requirements.txt              # Python dependencies
@@ -20,7 +20,7 @@ vlc_extension/
 ## How It Works
 
 1. User installs the VLC extension (copies directory to VLC extensions folder)
-2. User activates extension in VLC (View → Extensions → ZeroConf AI Chat)
+2. User activates extension in VLC (View → Extensions → Saturn Chat)
 3. Lua extension automatically:
    - Detects the operating system
    - Locates the bundled bridge executable
@@ -98,7 +98,7 @@ PyInstaller creates platform-specific executables. To support all platforms:
 
 3. **Auto-cleanup**: Port file is automatically deleted when the bridge exits
 
-### Lua Extension (zeroconf_ai_chat.lua)
+### Lua Extension (saturn_chat.lua)
 
 1. **OS Detection**: Automatically detects Windows, macOS, or Linux
 2. **Bridge Launcher**: Launches the appropriate executable using `io.popen()`
@@ -135,14 +135,14 @@ PyInstaller creates platform-specific executables. To support all platforms:
 
 2. Restart VLC
 
-3. Activate the extension: View → Extensions → ZeroConf AI Chat
+3. Activate the extension: View → Extensions → Saturn Chat
 
 4. Check VLC logs (Tools → Messages) for:
    ```
-   [ZeroConf AI] OS detected: linux
-   [ZeroConf AI] Extension dir: /path/to/extensions/vlc_extension/
-   [ZeroConf AI] Launching bridge: /path/to/bridge/vlc_discovery_bridge
-   [ZeroConf AI] Bridge running at: http://127.0.0.1:9876
+   [Saturn] OS detected: linux
+   [Saturn] Extension dir: /path/to/extensions/vlc_extension/
+   [Saturn] Launching bridge: /path/to/bridge/vlc_discovery_bridge
+   [Saturn] Bridge running at: http://127.0.0.1:9876
    ```
 
 ## Recent Fixes (v1.5.1)
@@ -161,7 +161,7 @@ http error: cannot connect to 127.0.0.1:9876
 2. **Race Condition**: Lua was connecting to the bridge immediately after the port file appeared, before the server was fully ready to accept connections
 
 **Fixes Applied:**
-1. **Lua Extension (`zeroconf_ai_chat.lua`)**:
+1. **Lua Extension (`saturn_chat.lua`)**:
    - Changed from `io.popen()` to `os.execute()` with `start /B` on Windows for proper backgrounding
    - Increased port file wait timeout from 5s to 10s
    - Added 500ms safety delay AFTER port file appears before attempting connection
@@ -236,18 +236,18 @@ If you see "Connection refused by peer" errors:
 Enable detailed logging in VLC:
 1. Tools → Messages
 2. Set verbosity to "2 - Debug"
-3. Look for `[ZeroConf AI]` messages
+3. Look for `[Saturn]` messages
 4. You should see a sequence like:
    ```
-   [ZeroConf AI] Extension activated
-   [ZeroConf AI] OS detected: windows
-   [ZeroConf AI] Launching bridge: C:\...\bridge\vlc_discovery_bridge.exe
-   [ZeroConf AI] Bridge process launched
-   [ZeroConf AI] Port file found: http://127.0.0.1:9876
-   [ZeroConf AI] Waiting for server to fully initialize...
-   [ZeroConf AI] Bridge should be ready
-   [ZeroConf AI] Health check attempt 1/7
-   [ZeroConf AI] Bridge connection successful!
+   [Saturn] Extension activated
+   [Saturn] OS detected: windows
+   [Saturn] Launching bridge: C:\...\bridge\vlc_discovery_bridge.exe
+   [Saturn] Bridge process launched
+   [Saturn] Port file found: http://127.0.0.1:9876
+   [Saturn] Waiting for server to fully initialize...
+   [Saturn] Bridge should be ready
+   [Saturn] Health check attempt 1/7
+   [Saturn] Bridge connection successful!
    ```
 
 If the sequence breaks, the last message will tell you where the failure occurred.

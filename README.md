@@ -1,4 +1,4 @@
-# ZeroConf AI
+# Saturn
 
 *Are you tired of managing API keys for every single app that wants to use AI?*
 
@@ -29,7 +29,7 @@ So Derek runs our script on a Raspberry Pi. Now every app on his home network ca
 
 ## What Exists Right Now
 
-This repository contains a working ZeroConf AI implementation that:
+This repository contains a working Saturn implementation that:
 
 1. **Broadcasts AI services** on your local network using mDNS
 2. **Proxies requests** to multiple providers (OpenRouter, Ollama, Gemini)
@@ -196,13 +196,13 @@ python clients/file_upload_client.py
 
 **Using clients in your code:**
 ```python
-from clients.local_proxy_client import ServiceManager, ZeroconfAIClient
+from clients.local_proxy_client import ServiceManager, SaturnClient
 
 manager = ServiceManager()
 time.sleep(2)  # Give it a moment to discover services
 
 for url, name in manager.items():
-    client = ZeroconfAIClient(manager, url)
+    client = SaturnClient(manager, url)
     break
 
 response = client.chat("What's the meaning of life?")
@@ -226,7 +226,7 @@ All of Derek's family's apps automatically use the gaming PC first (priority 10)
 
 ## Architecture
 
-**mDNS Service Type**: `_zeroconfai._tcp.local.`
+**mDNS Service Type**: `_saturn._tcp.local.`
 
 **API Endpoints**:
 - `/v1/health` - Check if service is alive
@@ -244,7 +244,7 @@ All of Derek's family's apps automatically use the gaming PC first (priority 10)
 }
 ```
 
-All servers speak OpenAI-compatible API. Whether you're hitting OpenRouter, Ollama, or even the sarcastic fallback server, the request/response format is identical. This means your client code works with ANY ZeroConf AI server without modification.
+All servers speak OpenAI-compatible API. Whether you're hitting OpenRouter, Ollama, or even the sarcastic fallback server, the request/response format is identical. This means your client code works with ANY Saturn server without modification.
 
 
 ## FAQ

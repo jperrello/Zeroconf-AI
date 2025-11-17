@@ -246,13 +246,13 @@ class SimpleListener(ServiceListener):
 def main():
     zc = Zeroconf()
     listener = SimpleListener()
-    # scanning the network for any service advertising _zeroconfai._tcp.local.
-    browser = ServiceBrowser(zc, "_zeroconfai._tcp.local.", listener)
-    
-    print("Searching for ZeroconfAI services...") 
+    # scanning the network for any service advertising _saturn._tcp.local.
+    browser = ServiceBrowser(zc, "_saturn._tcp.local.", listener)
+
+    print("Searching for Saturn services...")
     time.sleep(1.5)
     if not listener.service_found.wait(timeout=3.0):
-        print("No ZeroconfAI services found.")
+        print("No Saturn services found.")
         browser.cancel()
         zc.close()  
         return
@@ -266,7 +266,7 @@ def main():
     context_injected = False
     
     print("\n" + "="*60)
-    print("Enhanced ZeroconfAI Chat Client")
+    print("Enhanced Saturn Chat Client")
     print("="*60)
     print("\nCommands:")
     print("  /upload <filepath>  - Upload a file for context")
@@ -365,7 +365,7 @@ def main():
                     output_tokens = usage.get('completion_tokens', 0)
                     
                     if token_tracker.update_usage(input_tokens, output_tokens):
-                        print(f"\n⚠️  WARNING: Cost exceeded ${token_tracker.warning_cost_cents/100:.2f}!")
+                        print(f"\n  WARNING: Cost exceeded ${token_tracker.warning_cost_cents/100:.2f}!")
                         summary = token_tracker.get_summary()
                         print(f"Current cost: ${summary['cost_usd']:.4f}")
                         print("Continuing anyway... (use /info to check usage)\n")

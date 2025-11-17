@@ -28,13 +28,13 @@ class SimpleListener(ServiceListener):
 def main():
     zc = Zeroconf()
     listener = SimpleListener()
-    browser = ServiceBrowser(zc, "_zeroconfai._tcp.local.", listener)
-    
+    browser = ServiceBrowser(zc, "_saturn._tcp.local.", listener)
 
-    print("Searching for ZeroconfAI services...") 
+
+    print("Searching for Saturn services...")
     time.sleep(1.5)
     if not listener.service_found.wait(timeout=3.0):
-        print("No ZeroconfAI services found.")
+        print("No Saturn services found.")
         browser.cancel()
         zc.close()  
         return

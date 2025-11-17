@@ -35,12 +35,12 @@ Derek tested it once with a curl command, got a limerick about coffee, and never
 
 ## The Router Update (One Week Earlier)
 
-What Derek didn't know was that his ISP, MegaLink Cable, had recently pushed a firmware update to all their rental routers. The update included a new "AI Plus" feature—a built-in ZeroConf AI proxy that came free with their premium internet tier.
+What Derek didn't know was that his ISP, MegaLink Cable, had recently pushed a firmware update to all their rental routers. The update included a new "AI Plus" feature—a built-in Saturn proxy that came free with their premium internet tier.
 
 The router, a chunky Arris unit that Derek barely paid attention to, now broadcasted its own AI service:
 
 ```
-Service: _zeroconfai._tcp.local.
+Service: _saturn._tcp.local.
 Hostname: megalink-ai-gateway.local
 Port: 8088
 TXT Records:
@@ -79,7 +79,7 @@ Mira arrived on Thursday evening with her rolling suitcase and camera bag. She w
 
 Friday morning, she was testing shots in Derek's backyard. The light was perfect—golden hour streaming through the Japanese maple, illuminating Derek's utterly ridiculous garden gnome collection. One gnome in particular wore a tiny sombrero and held a tinier margarita glass.
 
-She framed the shot on her phone using SnapQuip, her favorite camera app. It had all the manual controls she wanted, plus this new AI feature that suggested captions. The app developers had added ZeroConf AI support in version 3.2, though Mira had no idea what that meant. She just knew that sometimes the caption button worked and sometimes it said "No AI available."
+She framed the shot on her phone using SnapQuip, her favorite camera app. It had all the manual controls she wanted, plus this new AI feature that suggested captions. The app developers had added Saturn support in version 3.2, though Mira had no idea what that meant. She just knew that sometimes the caption button worked and sometimes it said "No AI available."
 
 ## The Discovery
 
@@ -89,7 +89,7 @@ The app's status bar briefly showed: "Discovering AI providers..."
 
 **SnapQuip's internal log:**
 ```
-[09:23:41] Sending mDNS query for _zeroconfai._tcp.local.
+[09:23:41] Sending mDNS query for _saturn._tcp.local.
 [09:23:41] Found: dereks-llm-buffet.local:8080
 [09:23:41]   TXT: models=claude-3.5-sonnet,claude-3-haiku
 [09:23:41]   TXT: priority=50, auth=none, backend=proxy
@@ -104,7 +104,7 @@ The app's status bar briefly showed: "Discovering AI providers..."
 [09:23:42] Selected provider: dereks-llm-buffet.local
 ```
 
-SnapQuip had found both providers but chose Derek's Pi because it had the lower priority value (50 vs 100). In ZeroConf AI, lower priority numbers mean "prefer this one."
+SnapQuip had found both providers but chose Derek's Pi because it had the lower priority value (50 vs 100). In Saturn, lower priority numbers mean "prefer this one."
 
 Then, almost instantly, three caption suggestions appeared:
 
@@ -134,7 +134,7 @@ Derek's brain needed a moment. "Oh. OH. You're on the home WiFi."
 
 "...yes?"
 
-"Your app must support ZeroConf AI. It found my Pi."
+"Your app must support Saturn. It found my Pi."
 
 Mira stared at him. "Your pie?"
 
@@ -197,7 +197,7 @@ Mira transferred a test photo to her phone and hit "Suggest Caption."
 
 **SnapQuip's internal log:**
 ```
-[10:47:23] Sending mDNS query for _zeroconfai._tcp.local.
+[10:47:23] Sending mDNS query for _saturn._tcp.local.
 [10:47:23] Found: megalink-ai-gateway.local:8088
 [10:47:23]   TXT: models=gpt-3.5-turbo,gpt-4o-mini, priority=100
 [10:47:24] GET http://dereks-llm-buffet.local:8080/v1/health -> Connection refused
@@ -332,7 +332,7 @@ Mira realized he was right. She'd gotten used to instant, actually-good AI capti
 
 "Can I set one up?" she asked.
 
-"You'd need to pay for your own API subscription, get a Raspberry Pi, install the ZeroConf AI server software, configure it..."
+"You'd need to pay for your own API subscription, get a Raspberry Pi, install the Saturn server software, configure it..."
 
 Mira's eyes had already glazed over at "API subscription."
 
@@ -415,7 +415,7 @@ She never had to think about it. The system just... worked, corporate prompt inj
 
 Six weeks later, Mira's photographer friend asked: "What's your secret for the captions?"
 
-Mira thought about how to explain ZeroConf AI, Raspberry Pis, mDNS service discovery, and VPN tunneling.
+Mira thought about how to explain Saturn, Raspberry Pis, mDNS service discovery, and VPN tunneling.
 
 "I have a really good brother," she said.
 
@@ -427,7 +427,7 @@ That was accurate enough.
 
 **What SnapQuip actually did:**
 
-- Implemented ZeroConf AI client library in version 3.2
+- Implemented Saturn client library in version 3.2
 - Broadcast mDNS queries on app launch and network changes
 - Discovered multiple providers and sorted by priority (lower = better)
 - Cached discovered provider list with 5-minute TTL
@@ -439,7 +439,7 @@ That was accurate enough.
 
 **What Derek's Pi provided:**
 
-- ZeroConf AI server broadcasting `_zeroconfai._tcp.local.`
+- Saturn server broadcasting `_saturn._tcp.local.`
 - Priority: 50 (preferred over MegaLink's router)
 - Proxy to Anthropic's Claude API (Claude 3.5 Sonnet for vision + captions)
 - No authentication (trust-based, LAN-only)
@@ -450,7 +450,7 @@ That was accurate enough.
 
 **What MegaLink's router provided:**
 
-- ZeroConf AI server built into firmware (automatic, no configuration)
+- Saturn server built into firmware (automatic, no configuration)
 - Priority: 100 (lower priority than custom setups)
 - Proxy to OpenAI's API (GPT-4o-mini for cost efficiency)
 - **System prompt injection**: Silently modified every request to occasionally mention MegaLink's services

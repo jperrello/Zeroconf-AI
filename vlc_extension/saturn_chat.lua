@@ -1,11 +1,11 @@
 function descriptor()
     return {
-        title = "ZeroConf AI Chat",
+        title = "Saturn VLC Extension",
         version = "1.5.1",
         author = "Joey Perrello",
-        url = "https://github.com/yourrepo/zeroconfai",
-        shortdesc = "AI chat with automatic service discovery",
-        description = "Chat with AI about your media using automatic ZeroConf service discovery - Fixed race condition and Windows launch issues",
+        url = "https://github.com/jperrello/Zeroconf-AI",
+        shortdesc = "Chat with Saturn",
+        description = "Chat with AI about your media using automatic ZeroConf service discovery",
         capabilities = {"input-listener", "meta-listener"}
     }
 end
@@ -33,7 +33,7 @@ bridge_port_file = nil
 bridge_launched = false
 
 function activate()
-    vlc.msg.info("[ZeroConf AI] Extension activated")
+    vlc.msg.info("[Saturn] Extension activated")
 
     -- Try to launch the bundled bridge executable
     launch_bridge()
@@ -51,7 +51,7 @@ function deactivate()
         dlg:delete()
         dlg = nil
     end
-    vlc.msg.info("[ZeroConf AI] Extension deactivated")
+    vlc.msg.info("[Saturn] Extension deactivated")
 end
 
 function meta_changed()
@@ -63,7 +63,7 @@ function input_changed()
 end
 
 function create_dialog()
-    dlg = vlc.dialog("ZeroConf AI Chat - Media Intelligence")
+    dlg = vlc.dialog("Saturn Chat - Media Intelligence")
     
     dlg:add_label("<b>Bridge Configuration:</b>", 1, 1, 2, 1)
     bridge_url_input = dlg:add_text_input(bridge_url, 3, 1, 2, 1)
@@ -117,7 +117,7 @@ function check_bridge_status()
     local retry_delays = {0.1, 0.2, 0.5, 1.0, 1.5, 2.0, 2.5}  -- seconds
 
     for retry = 1, max_retries do
-        vlc.msg.info("[ZeroConf AI] Health check attempt " .. retry .. "/" .. max_retries)
+        vlc.msg.info("[Saturn] Health check attempt " .. retry .. "/" .. max_retries)
         local response = http_get(bridge_url .. "/v1/health")
         if response then
             local health = parse_json(response)
@@ -126,31 +126,31 @@ function check_bridge_status()
                                          health.healthy_services or 0)
                 status_label:set_text(msg)
                 debug_label:set_text("Debug: Bridge OK")
-                vlc.msg.info("[ZeroConf AI] Bridge connection successful!")
+                vlc.msg.info("[Saturn] Bridge connection successful!")
                 refresh_services()
                 return
             elseif health and health.status == "no_services" then
                 status_label:set_text("Bridge connected but no AI services found")
                 debug_label:set_text("Debug: No AI services")
-                vlc.msg.info("[ZeroConf AI] Bridge connected, waiting for AI services...")
+                vlc.msg.info("[Saturn] Bridge connected, waiting for AI services...")
                 return
             elseif health and health.status == "starting" then
                 -- Bridge is still initializing
-                vlc.msg.info("[ZeroConf AI] Bridge still starting, waiting...")
+                vlc.msg.info("[Saturn] Bridge still starting, waiting...")
                 status_label:set_text("Bridge initializing...")
                 debug_label:set_text("Debug: Bridge starting")
                 -- Continue to retry
             elseif health and health.status then
                 status_label:set_text("Bridge in state: " .. health.status)
                 debug_label:set_text("Debug: " .. health.status)
-                vlc.msg.info("[ZeroConf AI] Bridge state: " .. health.status)
+                vlc.msg.info("[Saturn] Bridge state: " .. health.status)
                 return
             end
         end
 
         -- If we get here, connection failed - retry with delay
         if retry < max_retries then
-            vlc.msg.info("[ZeroConf AI] Connection attempt " .. retry .. " failed, retrying in " .. retry_delays[retry] .. "s...")
+            vlc.msg.info("[Saturn] Connection attempt " .. retry .. " failed, retrying in " .. retry_delays[retry] .. "s...")
             local delay = retry_delays[retry]
             local start = os.clock()
             while os.clock() - start < delay do end
@@ -158,7 +158,7 @@ function check_bridge_status()
     end
 
     -- All retries exhausted
-    vlc.msg.err("[ZeroConf AI] Bridge connection failed after " .. max_retries .. " attempts")
+    vlc.msg.err("[Saturn] Bridge connection failed after " .. max_retries .. " attempts")
     status_label:set_text("Cannot connect to bridge at " .. bridge_url)
     debug_label:set_text("Debug: Bridge unreachable after retries")
 end
@@ -829,8 +829,8 @@ function launch_bridge()
     local os_type = detect_os()
     local extension_dir = get_extension_dir()
 
-    vlc.msg.info("[ZeroConf AI] OS detected: " .. os_type)
-    vlc.msg.info("[ZeroConf AI] Extension dir: " .. extension_dir)
+    vlc.msg.info("[Saturn] OS detected: " .. os_type)
+    vlc.msg.info("[Saturn] Extension dir: " .. extension_dir)
 
     -- Determine the bridge executable path
     local bridge_exe
@@ -843,8 +843,8 @@ function launch_bridge()
     -- Check if the bridge executable exists
     local file = io.open(bridge_exe, "r")
     if not file then
-        vlc.msg.warn("[ZeroConf AI] Bridge executable not found at: " .. bridge_exe)
-        vlc.msg.info("[ZeroConf AI] Will use external bridge if running")
+        vlc.msg.warn("[Saturn] Bridge executable not found at: " .. bridge_exe)
+        vlc.msg.info("[Saturn] Will use external bridge if running")
         return
     end
     file:close()
@@ -853,8 +853,8 @@ function launch_bridge()
     local temp_dir = get_temp_dir()
     bridge_port_file = temp_dir .. (os_type == "windows" and "\\" or "/") .. "vlc_bridge_port.txt"
 
-    vlc.msg.info("[ZeroConf AI] Launching bridge: " .. bridge_exe)
-    vlc.msg.info("[ZeroConf AI] Port file: " .. bridge_port_file)
+    vlc.msg.info("[Saturn] Launching bridge: " .. bridge_exe)
+    vlc.msg.info("[Saturn] Port file: " .. bridge_port_file)
 
     -- Clean up old port file if it exists
     os.remove(bridge_port_file)
@@ -874,11 +874,11 @@ function launch_bridge()
     end
 
     if exec_result == nil or exec_result == false then
-        vlc.msg.err("[ZeroConf AI] Failed to launch bridge process")
+        vlc.msg.err("[Saturn] Failed to launch bridge process")
         return
     end
 
-    vlc.msg.info("[ZeroConf AI] Bridge process launched")
+    vlc.msg.info("[Saturn] Bridge process launched")
     bridge_launched = true
 
     -- Wait for the port file to be created AND valid (max 10 seconds)
@@ -894,17 +894,17 @@ function launch_bridge()
                 local host, port = content:match("([^:]+):(%d+)")
                 if host and port then
                     bridge_url = "http://" .. host .. ":" .. port
-                    vlc.msg.info("[ZeroConf AI] Port file found: " .. bridge_url)
+                    vlc.msg.info("[Saturn] Port file found: " .. bridge_url)
 
                     -- CRITICAL: Add additional delay after port file appears
                     -- The bridge writes the port file AFTER the server is ready,
                     -- but we add a small safety margin for network stack initialization
-                    vlc.msg.info("[ZeroConf AI] Waiting for server to fully initialize...")
+                    vlc.msg.info("[Saturn] Waiting for server to fully initialize...")
                     local safety_delay = 0.5  -- 500ms safety margin
                     local start = os.clock()
                     while os.clock() - start < safety_delay do end
 
-                    vlc.msg.info("[ZeroConf AI] Bridge should be ready")
+                    vlc.msg.info("[Saturn] Bridge should be ready")
                     return
                 end
             end
@@ -915,8 +915,8 @@ function launch_bridge()
         wait_count = wait_count + 1
     end
 
-    vlc.msg.warn("[ZeroConf AI] Timeout waiting for bridge to start")
-    vlc.msg.warn("[ZeroConf AI] Check VLC messages for errors or try running bridge manually")
+    vlc.msg.warn("[Saturn] Timeout waiting for bridge to start")
+    vlc.msg.warn("[Saturn] Check VLC messages for errors or try running bridge manually")
 end
 
 function shutdown_bridge()
@@ -924,7 +924,7 @@ function shutdown_bridge()
         return
     end
 
-    vlc.msg.info("[ZeroConf AI] Shutting down bridge...")
+    vlc.msg.info("[Saturn] Shutting down bridge...")
 
     -- Send shutdown request to bridge
     local shutdown_url = bridge_url .. "/shutdown"
@@ -933,9 +933,9 @@ function shutdown_bridge()
     end)
 
     if success then
-        vlc.msg.info("[ZeroConf AI] Bridge shutdown signal sent")
+        vlc.msg.info("[Saturn] Bridge shutdown signal sent")
     else
-        vlc.msg.warn("[ZeroConf AI] Failed to send shutdown signal to bridge")
+        vlc.msg.warn("[Saturn] Failed to send shutdown signal to bridge")
     end
 
     -- Clean up port file

@@ -122,7 +122,7 @@ async def lifespan(app: FastAPI):
     print("Shutting down OpenRouter server...")
 
 app = FastAPI(
-    title="ZeroconfAI OpenRouter Unified",
+    title="Saturn OpenRouter Unified",
     description="Unified OpenRouter proxy with full model catalog, multimodal support, and intelligent auto-routing",
     summary="Get LLMs anywhere you go!",
     version="2.0",
@@ -303,7 +303,7 @@ def find_available_priority(desired_priority: int, service_type: str) -> int:
     return current_priority
 
 # zeroconf broadcasts this service on the network so clients can find it
-def register_zeroconfai(port: int, priority: int, service_type: str) -> tuple[Zeroconf, ServiceInfo]:
+def register_saturn(port: int, priority: int, service_type: str) -> tuple[Zeroconf, ServiceInfo]:
     actual_priority = find_available_priority(priority, service_type)
     
     zeroconf = Zeroconf()
@@ -349,7 +349,7 @@ def find_port_number(host: str, start_port=8080, max_attempts=20) -> int:
         f"No available ports in range {start_port} - {start_port + max_attempts}")
 
 def main():
-    parser = argparse.ArgumentParser(description="ZeroconfAI OpenRouter Unified Server")
+    parser = argparse.ArgumentParser(description="Saturn OpenRouter Unified Server")
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=None)
     parser.add_argument("--priority", type=int, default=50)
@@ -359,9 +359,9 @@ def main():
     port = args.port if args.port else find_port_number(args.host)
     print(f"Starting OpenRouter Unified proxy on {args.host}:{port} with desired priority {args.priority}...")
     print(f"Features: full model catalog (343 models), multimodal support, openrouter/auto routing")
-    
-    service_type = "_zeroconfai._tcp.local."
-    zeroconf, service_info = register_zeroconfai(port, priority=args.priority, service_type=service_type)
+
+    service_type = "_saturn._tcp.local."
+    zeroconf, service_info = register_saturn(port, priority=args.priority, service_type=service_type)
     
     try:
         uvicorn.run(app, host=args.host, port=port)

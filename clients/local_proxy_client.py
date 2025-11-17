@@ -45,7 +45,7 @@ class ServiceDiscovery:
         self.lock = threading.Lock()
         self.zc = Zeroconf()
         self.listener = self._create_listener()
-        self.browser = ServiceBrowser(self.zc, "_zeroconfai._tcp.local.", self.listener)
+        self.browser = ServiceBrowser(self.zc, "_saturn._tcp.local.", self.listener)
 
     def _create_listener(self) -> ServiceListener:
         discovery = self
@@ -247,8 +247,8 @@ class ProxyManager:
         self.discovery.stop()
 
 app = FastAPI(
-    title="ZeroconfAI Local Proxy",
-    description="OpenAI-compatible reverse proxy that discovers and routes to ZeroconfAI services",
+    title="Saturn Local Proxy",
+    description="OpenAI-compatible reverse proxy that discovers and routes to Saturn services",
     version="1.0",
     contact={
         "name": "Joey Perrello",
@@ -281,7 +281,7 @@ async def health(manager: ProxyManager = Depends(get_proxy_manager)) -> dict:
     
     return {
         "status": "ok" if healthy_services else "no_services",
-        "provider": "ZeroconfAI local proxy",
+        "provider": "Saturn local proxy",
         "services": len(healthy_services),
         "total_services": len(services)
     }
@@ -293,7 +293,7 @@ async def get_models(manager: ProxyManager = Depends(get_proxy_manager)) -> dict
     if not models["models"]:
         raise HTTPException(
             status_code=503,
-            detail="No models available from any ZeroconfAI service"
+            detail="No models available from any Saturn service"
         )
     
     return models
@@ -379,15 +379,15 @@ def find_port_number(host: str, start_port=8080, max_attempts=20) -> int:
 def main():
     global _proxy_manager
 
-    parser = argparse.ArgumentParser(description="ZeroconfAI Proxy")
-    parser.add_argument("--host", type=str, default="0.0.0.0")
+    parser = argparse.ArgumentParser(description="Saturn Proxy")
+    parser.add_argument("--host", type=str, default="127.0.0.1")
     parser.add_argument("--port", type=int, default=None)
     args = parser.parse_args()
-    
+
     port = args.port if args.port else find_port_number(args.host)
 
     print("=" * 50)
-    print("  ZeroconfAI Local Proxy")
+    print("  Saturn Local Proxy")
     print("=" * 50)
     print(f"Starting proxy on {args.host}:{port}")
     print(f"Configure Jan to connect to: http://{args.host}:{port}/v1")
