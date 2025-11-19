@@ -1,0 +1,3243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saturn - Zero-Configuration AI Service Discovery</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: 59 130 246;
+            --primary-light: 96 165 250;
+            --background-light: 255 255 255;
+            --background-dark: 14 14 16;
+            --gray-50: 243 243 243;
+            --gray-100: 238 238 238;
+            --gray-200: 222 222 222;
+            --gray-300: 206 206 206;
+            --gray-400: 158 158 158;
+            --gray-500: 112 112 112;
+            --gray-600: 80 80 80;
+            --gray-700: 62 62 62;
+            --gray-800: 37 37 37;
+            --gray-900: 23 23 23;
+            --gray-950: 10 10 10;
+            --success: 34 197 94;
+            --warning: 239 68 68;
+            --info: 59 130 246;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Scrollbar styling - all browsers */
+        /* Chrome, Edge, Safari */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Firefox */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: rgb(var(--background-dark));
+            color: rgb(var(--gray-400));
+            line-height: 1.75;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(14, 14, 16, 0.75);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            z-index: 50;
+        }
+
+        .header-container {
+            max-width: 1536px;
+            margin: 0 auto;
+            padding: 0 3rem;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 4rem;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: rgb(var(--gray-100));
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+
+        .logo:hover {
+            color: rgb(var(--gray-100));
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .github-link {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: rgb(var(--gray-400));
+            text-decoration: none;
+        }
+
+        .github-link:hover {
+            color: rgb(var(--gray-300));
+        }
+
+        /* Search bar */
+        .search-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+            font-size: 0.875rem;
+            color: rgb(var(--gray-300));
+            width: 200px;
+            transition: all 150ms ease;
+        }
+
+        .search-input::placeholder {
+            color: rgb(var(--gray-500));
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: rgba(var(--primary-light), 0.5);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            width: 14px;
+            height: 14px;
+            color: rgb(var(--gray-500));
+            pointer-events: none;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 1.5rem;
+            height: 3rem;
+            align-items: center;
+        }
+
+        .nav-tab {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: rgb(var(--gray-400));
+            text-decoration: none;
+            padding: 0.5rem 0;
+            border-bottom: 2px solid transparent;
+            transition: all 150ms ease;
+        }
+
+        .nav-tab:hover {
+            color: rgb(var(--gray-300));
+        }
+
+        .nav-tab.active {
+            color: rgb(var(--gray-200));
+            font-weight: 600;
+            border-bottom-color: rgb(var(--primary-light));
+        }
+
+        /* Main Layout */
+        .main-container {
+            max-width: 1536px;
+            margin: 0 auto;
+            padding: 7rem 3rem 2rem;
+            display: grid;
+            grid-template-columns: 18rem 1fr;
+            gap: 2rem;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: sticky;
+            top: 7rem;
+            height: calc(100vh - 7rem);
+            overflow-y: auto;
+            padding: 2rem 2rem 2rem 0;
+            align-self: start;
+        }
+
+        .sidebar-group {
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: rgb(var(--gray-200));
+            padding-left: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .sidebar-link {
+            display: block;
+            padding: 0.375rem 1rem;
+            font-size: 0.875rem;
+            color: rgb(var(--gray-400));
+            text-decoration: none;
+            border-radius: 0.75rem;
+            transition: all 150ms ease;
+        }
+
+        .sidebar-link:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: rgb(var(--gray-300));
+        }
+
+        .sidebar-link.active {
+            background: rgba(129, 140, 248, 0.1);
+            color: rgb(var(--primary-light));
+            font-weight: 600;
+        }
+
+        /* Content */
+        .content {
+            min-width: 0;
+            padding-right: 3rem;
+        }
+
+        .page-section {
+            display: none;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        /* TOC */
+        .toc {
+            position: sticky;
+            top: 7rem;
+            height: calc(100vh - 7rem);
+            overflow-y: auto;
+            padding: 2rem 0;
+            font-size: 0.875rem;
+        }
+
+        .toc-title {
+            color: rgb(var(--gray-300));
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .toc-link {
+            display: block;
+            padding: 0.25rem 0 0.25rem 0.75rem;
+            color: rgb(var(--gray-500));
+            text-decoration: none;
+            border-left: 1px solid transparent;
+            transition: all 150ms ease;
+        }
+
+        .toc-link:hover {
+            color: rgb(var(--gray-300));
+        }
+
+        .toc-link.active {
+            color: rgb(var(--gray-100));
+            border-left-color: rgb(var(--gray-100));
+            font-weight: 500;
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: rgb(var(--gray-100));
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: rgb(var(--gray-100));
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            scroll-margin-top: 8rem;
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: rgb(var(--gray-200));
+            margin-top: 2rem;
+            margin-bottom: 0.75rem;
+            scroll-margin-top: 8rem;
+        }
+
+        /* Section scroll offset for fixed header */
+        section[id] {
+            scroll-margin-top: 8rem;
+        }
+
+        h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: rgb(var(--gray-200));
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            color: rgb(var(--gray-400));
+            line-height: 1.75;
+            margin-bottom: 1.5rem;
+        }
+
+        a {
+            color: rgb(var(--primary-light));
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Lists */
+        ul, ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Inline Code */
+        code {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.875em;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.25rem;
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: rgb(var(--gray-900));
+            border: 1px solid rgb(var(--gray-800));
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 1rem;
+            background: rgb(var(--gray-800));
+            border-bottom: 1px solid rgb(var(--gray-700));
+        }
+
+        .code-filename {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: rgb(var(--gray-400));
+        }
+
+        .code-copy {
+            font-size: 0.75rem;
+            color: rgb(var(--gray-500));
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            transition: all 150ms ease;
+        }
+
+        .code-copy:hover {
+            color: rgb(var(--gray-300));
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .code-content {
+            padding: 1rem;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.8125rem;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+
+        pre {
+            margin: 0;
+        }
+
+        /* VSCode Dark+ Syntax Highlighting */
+        .code-content .comment { color: #6A9955; }
+        .code-content .keyword { color: #569CD6; }
+        .code-content .control { color: #C586C0; }
+        .code-content .string { color: #CE9178; }
+        .code-content .path { color: #DCDCAA; }
+        .code-content .function { color: #DCDCAA; }
+        .code-content .variable { color: #9CDCFE; }
+        .code-content .number { color: #B5CEA8; }
+        .code-content .operator { color: #D4D4D4; }
+        .code-content .property { color: #9CDCFE; }
+        .code-content .type { color: #4EC9B0; }
+        .code-content .constant { color: #4FC1FF; }
+        .code-content .class { color: #4EC9B0; }
+        .code-content .parameter { color: #9CDCFE; }
+        .code-content .punctuation { color: #D4D4D4; }
+        .code-content .tag { color: #569CD6; }
+        .code-content .attribute { color: #9CDCFE; }
+
+        /* Shiki-style syntax highlighting support */
+        .code-content code[language] {
+            display: block;
+            background: transparent;
+            padding: 0;
+        }
+
+        .code-content code[language] .line {
+            display: block;
+            min-height: 1.6em;
+        }
+
+        /* Override light mode inline styles with dark mode shiki variables */
+        .code-content code[language] span[style] {
+            color: var(--shiki-dark, inherit) !important;
+        }
+
+        /* Shiki dark theme variable support */
+        .code-content span[style*="--shiki-dark"] {
+            color: var(--shiki-dark) !important;
+        }
+
+        /* Additional line styling for Shiki output */
+        .code-content .line {
+            display: block;
+            min-height: 1.6em;
+        }
+
+        .code-content .line:empty::before {
+            content: ' ';
+        }
+
+        /* Callouts */
+        .callout {
+            padding: 1rem 1.25rem;
+            border-radius: 0.75rem;
+            margin: 1.5rem 0;
+            border-left: 3px solid;
+        }
+
+        .callout-info {
+            background: rgba(var(--success), 0.08);
+            border-left-color: rgb(var(--success));
+        }
+
+        .callout-tip {
+            background: rgba(var(--success), 0.1);
+            border-left-color: rgb(var(--success));
+        }
+
+        .callout-warning {
+            background: rgba(var(--warning), 0.1);
+            border-left-color: rgb(var(--warning));
+        }
+
+        .callout-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: rgb(var(--gray-200));
+            margin-bottom: 0.5rem;
+        }
+
+        .callout-content {
+            font-size: 0.875rem;
+            color: rgb(var(--gray-400));
+            line-height: 1.6;
+        }
+
+        /* Feature Cards */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .feature-card {
+            background: rgb(var(--gray-900));
+            border: 1px solid rgb(var(--gray-800));
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            transition: all 150ms ease;
+        }
+
+        .feature-card:hover {
+            border-color: rgb(var(--gray-700));
+            transform: translateY(-2px);
+        }
+
+        .feature-card-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: rgb(var(--gray-200));
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card-desc {
+            font-size: 0.8125rem;
+            color: rgb(var(--gray-500));
+            line-height: 1.5;
+        }
+
+        .feature-card-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .feature-card-link:hover {
+            text-decoration: none;
+        }
+
+        .feature-card-link:hover .feature-card {
+            border-color: rgb(var(--gray-700));
+            transform: translateY(-2px);
+        }
+
+        /* Steps List */
+        ol.steps-list {
+            list-style: none;
+            counter-reset: step-counter;
+            margin: 1.5rem 0;
+            padding: 0;
+        }
+
+        ol.steps-list > li {
+            counter-increment: step-counter;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem;
+            background: rgb(var(--gray-900));
+            border: 1px solid rgb(var(--gray-800));
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            transition: all 150ms ease;
+        }
+
+        ol.steps-list > li:hover {
+            border-color: rgb(var(--gray-700));
+        }
+
+        ol.steps-list > li::before {
+            content: counter(step-counter);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            background: rgba(var(--primary), 0.2);
+            border-radius: 50%;
+            color: rgb(var(--primary-light));
+            font-size: 0.875rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: rgb(var(--gray-200));
+            margin-bottom: 0.5rem;
+        }
+
+        .step-desc {
+            font-size: 0.875rem;
+            color: rgb(var(--gray-400));
+            line-height: 1.6;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgb(var(--gray-800));
+        }
+
+        th {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: rgb(var(--gray-200));
+            background: rgb(var(--gray-900));
+        }
+
+        td {
+            font-size: 0.875rem;
+            color: rgb(var(--gray-400));
+        }
+
+        /* Diagrams */
+        .diagram {
+            background: rgb(var(--gray-900));
+            border-radius: 1rem;
+            padding: 2rem;
+            margin: 2rem 0;
+            border: 1px solid rgb(var(--gray-800));
+        }
+
+        .diagram-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: rgb(var(--gray-500));
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .diagram-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .diagram-box {
+            padding: 1rem 1.25rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            text-align: center;
+            min-width: 160px;
+            transition: all 150ms ease;
+        }
+
+        .diagram-box:hover {
+            transform: scale(1.02);
+        }
+
+        .diagram-box-dark {
+            background: rgb(var(--gray-800));
+            border: 1px solid rgb(var(--gray-700));
+            color: rgb(var(--gray-300));
+        }
+
+        .diagram-box-primary {
+            background: rgba(var(--primary), 0.2);
+            border: 1px solid rgba(var(--primary-light), 0.3);
+            color: rgb(var(--primary-light));
+        }
+
+        .diagram-box-success {
+            background: rgba(var(--success), 0.2);
+            border: 1px solid rgba(var(--success), 0.3);
+            color: rgb(var(--success));
+        }
+
+        .diagram-box small {
+            display: block;
+            font-size: 0.75rem;
+            color: rgb(var(--gray-500));
+            margin-top: 0.25rem;
+        }
+
+        .diagram-connector {
+            width: 2.5rem;
+            height: 2px;
+            background: rgb(var(--gray-600));
+            position: relative;
+        }
+
+        .diagram-connector::after {
+            content: '';
+            position: absolute;
+            right: -4px;
+            top: -3px;
+            border: solid rgb(var(--gray-600));
+            border-width: 0 2px 2px 0;
+            padding: 3px;
+            transform: rotate(-45deg);
+        }
+
+        .diagram-connector-bidirectional {
+            width: 2.5rem;
+            height: 2px;
+            background: rgb(var(--gray-600));
+            position: relative;
+        }
+
+        .diagram-connector-bidirectional::before {
+            content: '';
+            position: absolute;
+            left: -4px;
+            top: -3px;
+            border: solid rgb(var(--gray-600));
+            border-width: 0 2px 2px 0;
+            padding: 3px;
+            transform: rotate(135deg);
+        }
+
+        .diagram-connector-bidirectional::after {
+            content: '';
+            position: absolute;
+            right: -4px;
+            top: -3px;
+            border: solid rgb(var(--gray-600));
+            border-width: 0 2px 2px 0;
+            padding: 3px;
+            transform: rotate(-45deg);
+        }
+
+        /* Diagram Labels */
+        .diagram-labels {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .diagram-label-spacer {
+            padding: 1rem 1.25rem;
+            font-size: 0.875rem;
+            visibility: hidden;
+        }
+
+        .diagram-label-spacer small {
+            display: block;
+        }
+
+        .diagram-label-text {
+            width: 2.5rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: rgb(var(--gray-500));
+            white-space: nowrap;
+        }
+
+        /* Architecture Diagram */
+        .arch-diagram {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .arch-zone {
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            position: relative;
+        }
+
+        .arch-zone-label {
+            position: absolute;
+            bottom: 0.75rem;
+            left: 0.75rem;
+            font-size: 0.75rem;
+            color: rgb(var(--gray-500));
+            font-style: italic;
+        }
+
+        .arch-zone-house {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .arch-zone-cloud {
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px solid rgba(59, 130, 246, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .arch-actors {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 1rem;
+        }
+
+        .arch-actor {
+            text-align: center;
+            font-size: 0.75rem;
+            color: rgb(var(--gray-400));
+        }
+
+        .arch-actor-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .arch-devices {
+            display: flex;
+            justify-content: space-around;
+            gap: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .arch-device {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .arch-device-box {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .arch-device-tablet {
+            background: rgba(255, 251, 235, 0.15);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            color: rgb(var(--warning));
+        }
+
+        .arch-device-server {
+            background: rgba(var(--gray-700), 0.5);
+            border: 1px solid rgb(var(--gray-600));
+            color: rgb(var(--gray-300));
+        }
+
+        .arch-app {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: rgb(var(--success));
+        }
+
+        .arch-service {
+            background: rgba(168, 85, 247, 0.2);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            color: rgb(168, 85, 247);
+        }
+
+        .arch-label {
+            font-size: 0.625rem;
+            color: rgb(var(--gray-500));
+            text-align: center;
+        }
+
+        .arch-arrow {
+            font-size: 0.625rem;
+            color: rgb(var(--gray-500));
+        }
+
+        .arch-connections {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-size: 0.625rem;
+            color: rgb(var(--gray-500));
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px dashed rgb(var(--gray-700));
+        }
+
+        .arch-connection {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .arch-connection-line {
+            flex: 1;
+            height: 1px;
+            background: rgb(var(--gray-600));
+        }
+
+        .arch-provider {
+            padding: 1rem;
+            background: rgba(var(--primary), 0.15);
+            border: 1px solid rgba(var(--primary-light), 0.3);
+            border-radius: 0.5rem;
+            text-align: center;
+            color: rgb(var(--primary-light));
+            font-size: 0.8125rem;
+        }
+
+        .arch-provider small {
+            display: block;
+            font-size: 0.625rem;
+            color: rgb(var(--gray-500));
+            margin-top: 0.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .arch-diagram {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            background: rgba(var(--primary), 0.2);
+            border: 1px solid rgba(var(--primary-light), 0.3);
+            border-radius: 0.5rem;
+            color: rgb(var(--primary-light));
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 150ms ease;
+        }
+
+        .btn:hover {
+            background: rgba(var(--primary), 0.3);
+            text-decoration: none;
+        }
+
+        .btn-large {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-bottom: 2.5rem;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .hero-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .hero-header h1 {
+            margin-bottom: 0;
+        }
+
+        .hero .subtitle {
+            margin-top: 1.5rem;
+        }
+
+        /* Copy Page Button */
+        .copy-page-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            color: rgb(var(--gray-400));
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 150ms ease;
+            flex-shrink: 0;
+        }
+
+        .copy-page-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+            color: rgb(var(--gray-300));
+        }
+
+        .copy-page-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Details/Summary */
+        details {
+            background: rgb(var(--gray-900));
+            border: 1px solid rgb(var(--gray-800));
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        details[open] {
+            border-color: rgb(var(--gray-700));
+        }
+
+        summary {
+            padding: 1rem 1.25rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: rgb(var(--gray-200));
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 150ms ease;
+        }
+
+        summary:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        summary::after {
+            content: '+';
+            font-size: 1.25rem;
+            color: rgb(var(--gray-500));
+            transition: transform 150ms ease;
+        }
+
+        details[open] summary::after {
+            content: '−';
+        }
+
+        details > div {
+            padding: 0 1.25rem 1.25rem;
+            font-size: 0.875rem;
+            color: rgb(var(--gray-400));
+            line-height: 1.6;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                padding: 7rem 1rem 2rem;
+            }
+
+            .sidebar, .toc {
+                display: none;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-container {
+                padding: 0 1rem;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        /* Search Suggestions */
+        .search-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 0.5rem;
+            background: rgb(var(--gray-900));
+            border: 1px solid rgb(var(--gray-700));
+            border-radius: 0.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-suggestions.active {
+            display: block;
+        }
+
+        .search-suggestion {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid rgb(var(--gray-800));
+            transition: background 150ms ease;
+        }
+
+        .search-suggestion:last-child {
+            border-bottom: none;
+        }
+
+        .search-suggestion:hover,
+        .search-suggestion.selected {
+            background: rgba(var(--primary), 0.15);
+        }
+
+        .search-suggestion-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: rgb(var(--gray-200));
+            margin-bottom: 0.25rem;
+        }
+
+        .search-suggestion-path {
+            font-size: 0.75rem;
+            color: rgb(var(--gray-500));
+        }
+
+        .search-suggestion-match {
+            color: rgb(var(--primary-light));
+            font-weight: 600;
+        }
+
+        .search-no-results {
+            padding: 1rem;
+            text-align: center;
+            color: rgb(var(--gray-500));
+            font-size: 0.875rem;
+        }
+
+        /* Copy page button feedback */
+        .copy-page-btn.copied {
+            background: rgba(var(--success), 0.2);
+            border-color: rgba(var(--success), 0.3);
+            color: rgb(var(--success));
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-container">
+            <div class="header-top">
+                <a href="#" class="logo" onclick="showSection('user'); return false;">Saturn</a>
+                <div class="header-actions">
+                    <div class="search-container">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" class="search-input" placeholder="Search docs..." autocomplete="off">
+                        <div class="search-suggestions" id="search-suggestions"></div>
+                    </div>
+                    <a href="https://github.com/jperrello/Zeroconf-AI" target="_blank" class="github-link">GitHub</a>
+                </div>
+            </div>
+            <nav class="nav-tabs">
+                <a href="#user" class="nav-tab active" data-section="user">User Guide</a>
+                <a href="#integrator" class="nav-tab" data-section="integrator">Integrator Guide</a>
+                <a href="#vlc" class="nav-tab" data-section="vlc">VLC Extension</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <!-- User Guide Navigation -->
+            <nav id="sidebar-user" class="sidebar-nav">
+                <div class="sidebar-group">
+                    <div class="sidebar-title">Getting Started</div>
+                    <a href="#user-intro" class="sidebar-link active">Introduction</a>
+                    <a href="#architecture-overview" class="sidebar-link">Architecture Overview</a>
+                    <a href="#user-quick-start" class="sidebar-link">Quick Start</a>
+                </div>
+                <div class="sidebar-group">
+                    <div class="sidebar-title">Tools</div>
+                    <a href="#user-simple-chat" class="sidebar-link">Simple Chat</a>
+                    <a href="#user-file-upload" class="sidebar-link">File Upload</a>
+                    <a href="#user-local-proxy" class="sidebar-link">Local Proxy</a>
+                </div>
+                <div class="sidebar-group">
+                    <div class="sidebar-title">Help</div>
+                    <a href="#user-troubleshooting" class="sidebar-link">Troubleshooting</a>
+                    <a href="#user-faq" class="sidebar-link">FAQ</a>
+                </div>
+            </nav>
+
+            <!-- Integrator Guide Navigation -->
+            <nav id="sidebar-integrator" class="sidebar-nav" style="display: none;">
+                <div class="sidebar-group">
+                    <div class="sidebar-title">Discovery</div>
+                    <a href="#int-overview" class="sidebar-link active">Overview</a>
+                    <a href="#int-service-discovery" class="sidebar-link">Service Discovery</a>
+                    <a href="#int-service-properties" class="sidebar-link">Service Properties</a>
+                </div>
+                <div class="sidebar-group">
+                    <div class="sidebar-title">API Reference</div>
+                    <a href="#int-endpoints" class="sidebar-link">Endpoints</a>
+                    <a href="#int-chat-completions" class="sidebar-link">Chat Completions</a>
+                    <a href="#int-streaming" class="sidebar-link">Streaming</a>
+                    <a href="#int-errors" class="sidebar-link">Error Handling</a>
+                </div>
+                <div class="sidebar-group">
+                    <div class="sidebar-title">Examples</div>
+                    <a href="#int-shell-examples" class="sidebar-link">Shell Scripts</a>
+                </div>
+            </nav>
+
+            <!-- VLC Extension Navigation -->
+            <nav id="sidebar-vlc" class="sidebar-nav" style="display: none;">
+                <div class="sidebar-group">
+                    <div class="sidebar-title">Getting Started</div>
+                    <a href="#vlc-overview" class="sidebar-link active">Overview</a>
+                    <a href="#vlc-installation" class="sidebar-link">Installation</a>
+                    <a href="#vlc-download" class="sidebar-link">Download</a>
+                </div>
+                <div class="sidebar-group">
+                    <div class="sidebar-title">Usage</div>
+                    <a href="#vlc-using" class="sidebar-link">Using the Extension</a>
+                    <a href="#vlc-examples" class="sidebar-link">Example Conversations</a>
+                </div>
+                <div class="sidebar-group">
+                    <div class="sidebar-title">Help</div>
+                    <a href="#vlc-troubleshooting" class="sidebar-link">Troubleshooting</a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="content">
+            <!-- User Documentation Section -->
+            <section id="user" class="page-section active">
+                <div class="hero">
+                    <div class="hero-header">
+                        <h1>Saturn: Zero-Configuration AI Service Discovery</h1>
+                        <button class="copy-page-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            Copy page
+                        </button>
+                    </div>
+                    <p class="subtitle">Saturn automatically connects your apps to AI services on your network. No configuration required for users, just connect to the same internet as your AI server and your apps find it.</p>
+                </div>
+
+                <section id="user-intro">
+                    <h2>What is Saturn?</h2>
+                    <p>Saturn makes AI services available to all your devices without any setup. Run a Saturn server once on your network, and every compatible app automatically finds and connects to it.</p>
+
+                    <p>Have you ever noticed how easy it is to find printers or smart TVs on your local network? Saturn brings that same convenience and technology to AI services. Your apps discover available AI backends on their own and seamlessly switch between them if one goes offline.</p>
+
+                    <div class="callout callout-tip">
+                        <div class="callout-title">Multiple Devices</div>
+                        <div class="callout-content">
+                            Set up AI once for your whole network, and every device that would like to access AI can with no interference on other people's session. You can also have multiple servers hosting different services, and if one server goes down; your apps switch to a backup without missing a beat.
+                        </div>
+                    </div>
+                </section>
+
+                <section id="architecture-overview">
+                    <h2>Architecture Overview</h2>
+                    <p>Saturn uses network discovery, that same technology that lets your devices find printers and speakers, to automatically locate AI services. Your apps find and connect to available servers without you entering any addresses or ports.</p>
+
+                    <h3>The Discovery Process</h3>
+                    <p>When a Saturn server is started, it announces itself on your local network. Clients automatically discover these services and connect to the best available option.</p>
+
+                    <ol class="steps-list">
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Server Announces Itself</div>
+                                <div class="step-desc">When you start a Saturn server, it broadcasts its presence on your network. This announcement includes everything apps need to connect: address, port, and priority level.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">App Discovers Services</div>
+                                <div class="step-desc">Your app looks for Saturn services on the network. Within moments, it finds all available servers. No configuration files or addresses needed.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Automatic Connection</div>
+                                <div class="step-desc">The app connects to the best available server based on priority. You control which server is preferred by setting priority values when you start each server.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Seamless Failover</div>
+                                <div class="step-desc">If a server goes offline, the app automatically switches to the next available one. Your work continues without interruption.</div>
+                            </div>
+                        </li>
+                    </ol>
+                    <p>Traditional setups require you to configure connection addresses in each application. With Saturn, you deploy servers once and every client on the network automatically finds them. Add a new server or remove an old one, and clients adapt instantly. This makes it easy to:</p>
+                    <ul>
+                        <li>Switch between local and cloud AI providers without changing client code</li>
+                        <li>Run multiple servers for redundancy and load distribution</li>
+                        <li>Deploy new services without reconfiguring existing applications</li>
+                    </ul>
+                </section>
+
+                <section id="user-quick-start">
+                    <h2>Quick Start</h2>
+
+                    <h3>Running a Server</h3>
+                    <p>Deploy at least one Saturn server on your network. Select the appropriate server type based on your AI backend:</p>
+
+                    <div class="feature-grid">
+                        <a href="https://github.com/jperrello/Zeroconf-AI/blob/main/servers/openrouter_server.py" target="_blank" class="feature-card-link">
+                            <div class="feature-card">
+                                <div class="feature-card-title">OpenRouter Server</div>
+                                <div class="feature-card-desc">Connects to OpenRouter cloud service, providing access to 200+ models including Claude, GPT-4, Gemini, and Llama. Requires an OpenRouter account key.</div>
+                            </div>
+                        </a>
+                        <a href="https://github.com/jperrello/Zeroconf-AI/blob/main/servers/ollama_server.py" target="_blank" class="feature-card-link">
+                            <div class="feature-card">
+                                <div class="feature-card-title">Ollama Server</div>
+                                <div class="feature-card-desc">Connects to a local Ollama installation. Enables offline operation and eliminates external service costs. Requires Ollama running locally, and could require powerful hardware depending on model chosen.</div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <h4>Example: Starting an OpenRouter Server</h4>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Terminal</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="comment"># Set up your credentials in a .env file</span>
+<span class="keyword">echo</span> <span class="string">"OPENROUTER_API_KEY=your-key-here"</span> > .env
+<span class="keyword">echo</span> <span class="string">"OPENROUTER_BASE_URL=https://openrouter.ai/api/v1/chat/completions"</span> >> .env
+
+<span class="comment"># Start the server</span>
+python servers/openrouter_server.py</pre>
+                        </div>
+                    </div>
+
+                    <h4>Example: Starting an Ollama Server</h4>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Terminal</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="comment"># Make sure Ollama is running, then start the Saturn server</span>
+python servers/ollama_server.py</pre>
+                        </div>
+                    </div>
+
+                    <h3>Setting Priority</h3>
+                    <p>Lower numbers mean higher priority. If you run multiple servers, set priorities to control which one apps prefer:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Terminal</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="comment"># Prefer local Ollama (priority 10)</span>
+python servers/ollama_server.py --priority 10
+
+<span class="comment"># Fall back to cloud (priority 50)</span>
+python servers/openrouter_server.py --priority 50</pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="user-simple-chat">
+                    <h2>Simple Chat Client</h2>
+                    <p>A minimal client implementation demonstrating Saturn service discovery. Suitable for testing deployments and basic interactive use.</p>
+
+                    <h3>How to Use</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Terminal</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre>python clients/simple_chat_client.py</pre>
+                        </div>
+                    </div>
+
+                    <p>The client discovers available Saturn services, connects to the highest-priority service, and initiates an interactive chat session.</p>
+
+                    <h3>Commands</h3>
+                    <ul>
+                        <li>Type your message and press Enter to chat</li>
+                        <li>Type <code>clear</code> to reset the conversation</li>
+                        <li>Type <code>quit</code> to exit</li>
+                    </ul>
+                </section>
+
+                <section id="user-file-upload">
+                    <h2>File Upload Client</h2>
+                    <p>An extended client supporting multimodal interactions with file context. Processes text files, images, and documents for inclusion in AI requests.</p>
+
+                    <h3>How to Use</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Terminal</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre>python clients/file_upload_client.py</pre>
+                        </div>
+                    </div>
+
+                    <h3>Commands</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>/upload &lt;filepath&gt;</code></td>
+                                <td>Share a file with the AI</td>
+                            </tr>
+                            <tr>
+                                <td><code>/list</code></td>
+                                <td>See all uploaded files</td>
+                            </tr>
+                            <tr>
+                                <td><code>/remove &lt;filename&gt;</code></td>
+                                <td>Remove a specific file</td>
+                            </tr>
+                            <tr>
+                                <td><code>/clear-files</code></td>
+                                <td>Remove all files</td>
+                            </tr>
+                            <tr>
+                                <td><code>/clear</code></td>
+                                <td>Reset the conversation</td>
+                            </tr>
+                            <tr>
+                                <td><code>/info</code></td>
+                                <td>Check token usage and costs</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Supported Files</h3>
+                    <ul>
+                        <li><strong>Text files:</strong> .py, .js, .ts, .java, .cpp, .c, .h, .rs, .go, .rb, .php, .swift, .kt, .scala, .sh, .bash, .md, .txt, .json, .xml, .yaml, .yml, .toml, .ini, .conf, .log, .sql, .html, .css, .scss, .lua</li>
+                        <li><strong>Images:</strong> .png, .jpg, .jpeg, .gif, .webp</li>
+                    </ul>
+
+                    <div class="callout callout-info">
+                        <div class="callout-title">Token Usage Monitoring</div>
+                        <div class="callout-content">
+                            The client tracks token consumption and provides cost estimates based on average pricing. Use <code>/info</code> to view current usage statistics including input tokens, output tokens, and total cost. A warning appears when costs exceed 25 cents.
+                        </div>
+                    </div>
+                </section>
+
+                <section id="user-local-proxy">
+                    <h2>Local Proxy</h2>
+                    <p>A bridge that finds Saturn services and makes them available to apps that don't have built-in Saturn support. Run this tool when you want to use Saturn with third-party AI applications; we recommend using Jan. </p>
+
+                    <h3>Use Cases</h3>
+                    <ul>
+                        <li>Integrating third-party applications (Jan, Continue, etc.) with Saturn services</li>
+                        <li>Consolidating multiple AI backends behind a single address</li>
+                        <li>Providing automatic failover for applications without native Saturn support</li>
+                    </ul>
+
+                    <h3>How to Use</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Terminal</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="comment"># Start with default settings (auto-finds available port)</span>
+python clients/local_proxy_client.py
+
+<span class="comment"># Or specify host and port</span>
+python clients/local_proxy_client.py --host 127.0.0.1 --port 8080</pre>
+                        </div>
+                    </div>
+
+                    <h3>Connecting Other Applications</h3>
+                    <p>Once the proxy is running, it will display the connection address. Configure your AI application (like Jan) to connect to that address. For example:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Connection Point</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre>http://127.0.0.1:8080/v1</pre>
+                        </div>
+                    </div>
+
+                    <p>The proxy provides automatic failover when services go offline, combines models from all discovered backends, and routes requests to the best available service based on priority.</p>
+                </section>
+
+                <section id="user-troubleshooting">
+                    <h2>Troubleshooting</h2>
+
+                    <details>
+                        <summary>No Saturn services found</summary>
+                        <div>
+                            <ul>
+                                <li>Verify at least one Saturn server is running and has completed initialization</li>
+                                <li>Confirm client and server are on the same network subnet</li>
+                                <li>Check firewall rules allow network discovery traffic (UDP port 5353)</li>
+                                <li>On Linux, ensure avahi-daemon is running</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details>
+                        <summary>Connection timeouts</summary>
+                        <div>
+                            <ul>
+                                <li>Verify the target service process is running and responsive</li>
+                                <li>Check if the service is healthy by visiting <code>/v1/health</code> in your browser</li>
+                                <li>For Ollama servers, confirm your system has enough memory for the model</li>
+                                <li>Review service logs for error messages</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details>
+                        <summary>Model not found</summary>
+                        <div>
+                            <ul>
+                                <li>Check available models by visiting <code>/v1/models</code> in your browser</li>
+                                <li>Verify model name matches exactly (names are case-sensitive)</li>
+                                <li>Confirm the service hosting the model is running</li>
+                                <li>For Ollama, ensure the model is downloaded: <code>ollama pull &lt;model&gt;</code></li>
+                            </ul>
+                        </div>
+                    </details>
+                </section>
+
+                <section id="user-faq">
+                    <h2>Frequently Asked Questions</h2>
+
+                    <details>
+                        <summary>Can I run both cloud and local AI services?</summary>
+                        <div>
+                            <p>Yes. Multiple Saturn servers can operate simultaneously with different priorities. A typical configuration runs Ollama locally (priority 10) for cost-free inference, with OpenRouter (priority 50) as a fallback. Clients automatically select based on availability and priority order.</p>
+                        </div>
+                    </details>
+
+                    <details>
+                        <summary>What are the security considerations?</summary>
+                        <div>
+                            <p>Saturn operates on your local network for service discovery. By default, services are accessible to anyone on your network without requiring a password. Security depends on your network setup—if your network is secure, Saturn is secure. For more protection, consider separating your network into segments or adding authentication.</p>
+                        </div>
+                    </details>
+
+                    <details>
+                        <summary>What are the cost implications?</summary>
+                        <div>
+                            <p>Ollama servers have no usage costs since they run locally on your hardware. OpenRouter servers charge based on your OpenRouter account usage. Network-wide service sharing means your whole network uses one account rather than requiring separate credentials for each application.</p>
+                        </div>
+                    </details>
+
+                    <details>
+                        <summary>How does Ollama handle concurrent requests?</summary>
+                        <div>
+                            <p>Concurrent request handling depends on your Ollama configuration. By default, requests are queued. For higher throughput, deploy additional servers at different priority levels for load distribution.</p>
+                        </div>
+                    </details>
+                </section>
+            </section>
+
+            <!-- Integrator Documentation Section -->
+            <section id="integrator" class="page-section">
+                <div class="hero">
+                    <div class="hero-header">
+                        <h1>Integrator Reference</h1>
+                        <button class="copy-page-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            Copy page
+                        </button>
+                    </div>
+                    <p class="subtitle">This documentation covers the technical specification for implementing Saturn-compatible services and clients. It covers the DNS-SD service discovery protocol, OpenAI-compatible REST API, and integration patterns.</p>
+                </div>
+
+                <section id="int-overview">
+                    <h2>Overview</h2>
+                    <p>Saturn uses a two-layer architecture for service discovery and communication:</p>
+
+                    <ol class="steps-list">
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Service Discovery Layer</div>
+                                <div class="step-desc">Services announce themselves using DNS-based Service Discovery (DNS-SD) over multicast DNS (mDNS). This allows zero-configuration discovery on local networks.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">API Layer</div>
+                                <div class="step-desc">Services expose HTTP endpoints following OpenAI API conventions. All Saturn services speak the same API format, making them interchangeable.</div>
+                            </div>
+                        </li>
+                    </ol>
+                </section>
+
+                <section id="int-service-discovery">
+                    <h2>Service Discovery Protocol</h2>
+                    <p>Saturn services register under the following mDNS service type:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Service Type</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre>_saturn._tcp.local.</pre>
+                        </div>
+                    </div>
+
+                    <h3>Discovery Process</h3>
+
+                    <h4>Step 1: Browse for Services</h4>
+                    <p>Send an mDNS query for PTR records to find available services:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">macOS / Linux</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="comment"># macOS</span>
+dns-sd -B _saturn._tcp local.
+
+<span class="comment"># Linux</span>
+avahi-browse -r _saturn._tcp</pre>
+                        </div>
+                    </div>
+
+                    <p>Example response:</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Response</span>
+                        </div>
+                        <div class="code-content">
+<pre>Browsing for _saturn._tcp.local.
+DATE: ---Sat 18 Nov 2024---
+Timestamp     A/R    Flags  if Domain    Service Type    Instance Name
+10:30:00.000  Add        2   4 local.    _saturn._tcp.   OpenRouter
+10:30:00.100  Add        2   4 local.    _saturn._tcp.   Ollama</pre>
+                        </div>
+                    </div>
+
+                    <h4>Step 2: Resolve Service Details</h4>
+                    <p>For each discovered service, query for SRV and TXT records to get connection details:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">macOS</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre>dns-sd -L "OpenRouter" _saturn._tcp local.</pre>
+                        </div>
+                    </div>
+
+                    <p>Example response:</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Response</span>
+                        </div>
+                        <div class="code-content">
+<pre>Lookup OpenRouter._saturn._tcp.local.
+DATE: ---Sat 18 Nov 2024---
+OpenRouter._saturn._tcp.local. can be reached at DESKTOP-ABC.local.:8080
+ priority=10 version=2.0 api=OpenRouter</pre>
+                        </div>
+                    </div>
+
+                    <h4>Step 3: Resolve Host Address</h4>
+                    <p>Query for the A record to get the IP address:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Response Format</span>
+                        </div>
+                        <div class="code-content">
+<pre>DESKTOP-ABC.local. has address 192.168.1.100</pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="int-service-properties">
+                    <h2>Service Properties</h2>
+                    <p>Each service advertises these properties in its TXT record:</p>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Property</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>version</code></td>
+                                <td>string</td>
+                                <td>Server version (e.g., "1.0", "2.0")</td>
+                            </tr>
+                            <tr>
+                                <td><code>api</code></td>
+                                <td>string</td>
+                                <td>API type identifier (e.g., "OpenRouter", "Ollama")</td>
+                            </tr>
+                            <tr>
+                                <td><code>priority</code></td>
+                                <td>string</td>
+                                <td>Numeric priority (lower = preferred)</td>
+                            </tr>
+                            <tr>
+                                <td><code>features</code></td>
+                                <td>string</td>
+                                <td>Comma-separated feature list (optional)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Service Selection Algorithm</h3>
+                    <p>When multiple services are discovered:</p>
+                    <ol>
+                        <li>Parse the <code>priority</code> property from each service's TXT record</li>
+                        <li>Sort services by priority in ascending order (lower values first)</li>
+                        <li>Connect to the service with the lowest priority number</li>
+                        <li>On connection failure, try the next service in priority order</li>
+                    </ol>
+
+                    <h3>Priority Guidelines</h3>
+                    <p>The default priority is 50. Lower numbers indicate higher preference. Clients select the service with the lowest priority number.</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Range</th>
+                                <th>Usage</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1-20</td>
+                                <td>Primary/preferred services</td>
+                                <td>Local Ollama (free, private)</td>
+                            </tr>
+                            <tr>
+                                <td>21-100</td>
+                                <td>Standard services (default: 50)</td>
+                                <td>Cloud providers (OpenRouter)</td>
+                            </tr>
+                            <tr>
+                                <td>101+</td>
+                                <td>Fallback services</td>
+                                <td>Emergency backup (999)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section id="int-endpoints">
+                    <h2>API Endpoints</h2>
+                    <p>All Saturn services implement these required endpoints:</p>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Path</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>GET</td>
+                                <td><code>/v1/health</code></td>
+                                <td>Health check</td>
+                            </tr>
+                            <tr>
+                                <td>GET</td>
+                                <td><code>/v1/models</code></td>
+                                <td>List available models</td>
+                            </tr>
+                            <tr>
+                                <td>POST</td>
+                                <td><code>/v1/chat/completions</code></td>
+                                <td>Chat completions</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Health Check</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Request</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre>curl http://192.168.1.100:8080/v1/health</pre>
+                        </div>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Response</span>
+                        </div>
+                        <div class="code-content">
+<pre>{
+  <span class="string">"status"</span>: <span class="string">"ok"</span>,
+  <span class="string">"provider"</span>: <span class="string">"OpenRouter"</span>,
+  <span class="string">"models_cached"</span>: 344,
+  <span class="string">"features"</span>: [<span class="string">"multimodal"</span>, <span class="string">"auto-routing"</span>, <span class="string">"full-catalog"</span>]
+}</pre>
+                        </div>
+                    </div>
+
+                    <h3>List Models</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Request</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre>curl http://192.168.1.100:8080/v1/models</pre>
+                        </div>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Response</span>
+                        </div>
+                        <div class="code-content">
+<pre>{
+  <span class="string">"models"</span>: [
+    {
+      <span class="string">"id"</span>: <span class="string">"openrouter/auto"</span>,
+      <span class="string">"object"</span>: <span class="string">"model"</span>,
+      <span class="string">"owned_by"</span>: <span class="string">"openrouter"</span>
+    },
+    {
+      <span class="string">"id"</span>: <span class="string">"anthropic/claude-3-opus"</span>,
+      <span class="string">"object"</span>: <span class="string">"model"</span>,
+      <span class="string">"owned_by"</span>: <span class="string">"anthropic"</span>,
+      <span class="string">"context_length"</span>: 200000
+    }
+  ]
+}</pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="int-chat-completions">
+                    <h2>Chat Completions</h2>
+                    <p>Send messages and receive AI responses.</p>
+
+                    <h3>Request Format</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Request</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre>curl -X POST http://192.168.1.100:8080/v1/chat/completions \
+  -H <span class="string">"Content-Type: application/json"</span> \
+  -d '{
+    <span class="string">"model"</span>: <span class="string">"anthropic/claude-3-opus"</span>,
+    <span class="string">"messages"</span>: [
+      {
+        <span class="string">"role"</span>: <span class="string">"system"</span>,
+        <span class="string">"content"</span>: <span class="string">"You are a helpful assistant."</span>
+      },
+      {
+        <span class="string">"role"</span>: <span class="string">"user"</span>,
+        <span class="string">"content"</span>: <span class="string">"Hello!"</span>
+      }
+    ],
+    <span class="string">"max_tokens"</span>: 1024,
+    <span class="string">"stream"</span>: <span class="keyword">false</span>
+  }'</pre>
+                        </div>
+                    </div>
+
+                    <h3>Request Parameters</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Field</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>model</code></td>
+                                <td>string</td>
+                                <td>Yes</td>
+                                <td>Model identifier from /v1/models</td>
+                            </tr>
+                            <tr>
+                                <td><code>messages</code></td>
+                                <td>array</td>
+                                <td>Yes</td>
+                                <td>Conversation history</td>
+                            </tr>
+                            <tr>
+                                <td><code>max_tokens</code></td>
+                                <td>integer</td>
+                                <td>No</td>
+                                <td>Maximum tokens in response</td>
+                            </tr>
+                            <tr>
+                                <td><code>stream</code></td>
+                                <td>boolean</td>
+                                <td>No</td>
+                                <td>Enable streaming (default: false)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Message Roles</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Role</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>system</code></td>
+                                <td>System instructions (context, personality, constraints)</td>
+                            </tr>
+                            <tr>
+                                <td><code>user</code></td>
+                                <td>Messages from the human user</td>
+                            </tr>
+                            <tr>
+                                <td><code>assistant</code></td>
+                                <td>Previous responses from the AI</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Response Format</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Response</span>
+                        </div>
+                        <div class="code-content">
+<pre>{
+  <span class="string">"id"</span>: <span class="string">"chatcmpl-1699900000"</span>,
+  <span class="string">"object"</span>: <span class="string">"chat.completion"</span>,
+  <span class="string">"created"</span>: 1699900000,
+  <span class="string">"model"</span>: <span class="string">"anthropic/claude-3-opus"</span>,
+  <span class="string">"choices"</span>: [
+    {
+      <span class="string">"index"</span>: 0,
+      <span class="string">"message"</span>: {
+        <span class="string">"role"</span>: <span class="string">"assistant"</span>,
+        <span class="string">"content"</span>: <span class="string">"Hello! How can I help you today?"</span>
+      },
+      <span class="string">"finish_reason"</span>: <span class="string">"stop"</span>
+    }
+  ],
+  <span class="string">"usage"</span>: {
+    <span class="string">"prompt_tokens"</span>: 25,
+    <span class="string">"completion_tokens"</span>: 18,
+    <span class="string">"total_tokens"</span>: 43
+  }
+}</pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="int-streaming">
+                    <h2>Streaming Responses</h2>
+                    <p>For real-time responses, set <code>stream: true</code> in the request. The response uses Server-Sent Events (SSE).</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Streaming Request</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre>curl -X POST http://192.168.1.100:8080/v1/chat/completions \
+  -H <span class="string">"Content-Type: application/json"</span> \
+  -N \
+  -d '{
+    <span class="string">"model"</span>: <span class="string">"anthropic/claude-3-opus"</span>,
+    <span class="string">"messages"</span>: [
+      {<span class="string">"role"</span>: <span class="string">"user"</span>, <span class="string">"content"</span>: <span class="string">"Count to 5"</span>}
+    ],
+    <span class="string">"stream"</span>: <span class="keyword">true</span>
+  }'</pre>
+                        </div>
+                    </div>
+
+                    <h3>Streaming Response Format</h3>
+                    <p>Each chunk is prefixed with <code>data: </code> and followed by two newlines:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Response Stream</span>
+                        </div>
+                        <div class="code-content">
+<pre><span class="comment"># First chunk (role announcement)</span>
+data: {"id":"chatcmpl-1699900000","object":"chat.completion.chunk","created":1699900000,"model":"anthropic/claude-3-opus","choices":[{"index":0,"delta":{"role":"assistant"},"finish_reason":null}]}
+
+<span class="comment"># Content chunks</span>
+data: {"id":"chatcmpl-1699900000","object":"chat.completion.chunk","created":1699900000,"model":"anthropic/claude-3-opus","choices":[{"index":0,"delta":{"content":"1, "},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-1699900000","object":"chat.completion.chunk","created":1699900000,"model":"anthropic/claude-3-opus","choices":[{"index":0,"delta":{"content":"2, "},"finish_reason":null}]}
+
+<span class="comment"># Final chunk</span>
+data: {"id":"chatcmpl-1699900000","object":"chat.completion.chunk","created":1699900000,"model":"anthropic/claude-3-opus","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}
+
+data: [DONE]</pre>
+                        </div>
+                    </div>
+
+                    <h3>Required Headers for Streaming</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Response Headers</span>
+                        </div>
+                        <div class="code-content">
+<pre>Content-Type: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+X-Accel-Buffering: no</pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="int-errors">
+                    <h2>Error Handling</h2>
+                    <p>All errors return a JSON response with a <code>detail</code> field:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Error Response</span>
+                        </div>
+                        <div class="code-content">
+<pre>{
+  <span class="string">"detail"</span>: <span class="string">"Error description here"</span>
+}</pre>
+                        </div>
+                    </div>
+
+                    <h3>HTTP Status Codes</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Meaning</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>200</td>
+                                <td>Success</td>
+                            </tr>
+                            <tr>
+                                <td>400</td>
+                                <td>Bad request (invalid model, malformed request)</td>
+                            </tr>
+                            <tr>
+                                <td>404</td>
+                                <td>Model not found in any available service</td>
+                            </tr>
+                            <tr>
+                                <td>500</td>
+                                <td>Internal server error (connection error to backend)</td>
+                            </tr>
+                            <tr>
+                                <td>502</td>
+                                <td>Bad gateway (upstream API error, invalid JSON response)</td>
+                            </tr>
+                            <tr>
+                                <td>503</td>
+                                <td>Service unavailable (backend not reachable, no models available)</td>
+                            </tr>
+                            <tr>
+                                <td>504</td>
+                                <td>Gateway timeout (request to backend timed out)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section id="int-shell-examples">
+                    <h2>Shell Script Examples</h2>
+
+                    <h3>Service Discovery Script</h3>
+                    <p>Discover Saturn services on the network and extract connection details:</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">discover.sh (macOS)</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="keyword">#!/bin/bash</span>
+
+<span class="comment"># Find Saturn services (runs for 3 seconds)</span>
+<span class="keyword">echo</span> <span class="string">"Discovering Saturn services..."</span>
+timeout 3 dns-sd -B _saturn._tcp local. 2&gt;/dev/null | grep Add | <span class="keyword">while</span> read line; <span class="keyword">do</span>
+    SERVICE=$(echo <span class="string">"$line"</span> | awk '{print $NF}')
+    <span class="keyword">echo</span> <span class="string">"Found: $SERVICE"</span>
+
+    <span class="comment"># Resolve service details</span>
+    dns-sd -L <span class="string">"$SERVICE"</span> _saturn._tcp local. 2&gt;/dev/null | head -2 | tail -1
+<span class="keyword">done</span></pre>
+                        </div>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">discover.sh (Linux)</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="keyword">#!/bin/bash</span>
+
+<span class="comment"># Find Saturn services and resolve their addresses</span>
+<span class="keyword">echo</span> <span class="string">"Discovering Saturn services..."</span>
+avahi-browse -rpt _saturn._tcp 2&gt;/dev/null | grep <span class="string">"^="</span> | <span class="keyword">while</span> IFS=';' read _ _ _ name _ _ host ip port txt; <span class="keyword">do</span>
+    <span class="keyword">echo</span> <span class="string">"Service: $name"</span>
+    <span class="keyword">echo</span> <span class="string">"  Address: $ip:$port"</span>
+    <span class="keyword">echo</span> <span class="string">"  Properties: $txt"</span>
+<span class="keyword">done</span></pre>
+                        </div>
+                    </div>
+
+                    <h3>Complete Discovery and Chat Script</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">discover_and_chat.sh</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="keyword">#!/bin/bash</span>
+
+<span class="comment"># Configuration</span>
+SERVER=<span class="string">"http://127.0.0.1:8080"</span>
+MODEL=<span class="string">"openrouter/auto"</span>
+
+<span class="comment"># Check health</span>
+<span class="keyword">echo</span> <span class="string">"Checking server health..."</span>
+curl -s <span class="string">"$SERVER/v1/health"</span> | python3 -m json.tool
+
+<span class="comment"># List available models</span>
+<span class="keyword">echo</span> <span class="string">"\nAvailable models:"</span>
+curl -s <span class="string">"$SERVER/v1/models"</span> | python3 -c <span class="string">"
+import sys, json
+data = json.load(sys.stdin)
+for model in data['models']:
+    print(f\"  - {model['id']}\")
+"</span>
+
+<span class="comment"># Make a chat request</span>
+<span class="keyword">echo</span> <span class="string">"\nSending chat request..."</span>
+curl -s -X POST <span class="string">"$SERVER/v1/chat/completions"</span> \
+  -H <span class="string">"Content-Type: application/json"</span> \
+  -d '{
+    "model": "'<span class="string">"$MODEL"</span>'",
+    "messages": [
+      {"role": "user", "content": "What is 2+2?"}
+    ]
+  }' | python3 -c <span class="string">"
+import sys, json
+data = json.load(sys.stdin)
+print(data['choices'][0]['message']['content'])
+"</span></pre>
+                        </div>
+                    </div>
+
+                    <h3>Multi-turn Conversation</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">conversation.sh</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="keyword">#!/bin/bash</span>
+
+SERVER=<span class="string">"http://127.0.0.1:8080/v1"</span>
+MODEL=<span class="string">"openrouter/auto"</span>
+
+<span class="comment"># First turn</span>
+RESPONSE=$(curl -s -X POST <span class="string">"$SERVER/chat/completions"</span> \
+  -H <span class="string">"Content-Type: application/json"</span> \
+  -d '{
+    "model": "'<span class="string">"$MODEL"</span>'",
+    "messages": [
+      {"role": "user", "content": "My name is Alice."}
+    ]
+  }')
+
+ASSISTANT_MSG=$(echo <span class="string">"$RESPONSE"</span> | python3 -c <span class="string">"
+import sys, json
+print(json.load(sys.stdin)['choices'][0]['message']['content'])
+"</span>)
+
+<span class="keyword">echo</span> <span class="string">"Assistant: $ASSISTANT_MSG"</span>
+
+<span class="comment"># Second turn with history</span>
+curl -s -X POST <span class="string">"$SERVER/chat/completions"</span> \
+  -H <span class="string">"Content-Type: application/json"</span> \
+  -d '{
+    "model": "'<span class="string">"$MODEL"</span>'",
+    "messages": [
+      {"role": "user", "content": "My name is Alice."},
+      {"role": "assistant", "content": "'<span class="string">"$ASSISTANT_MSG"</span>'"},
+      {"role": "user", "content": "What is my name?"}
+    ]
+  }' | python3 -c <span class="string">"
+import sys, json
+print('Assistant:', json.load(sys.stdin)['choices'][0]['message']['content'])
+"</span></pre>
+                        </div>
+                    </div>
+
+                    <h3>Streaming Output</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">stream.sh</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="keyword">#!/bin/bash</span>
+
+SERVER=<span class="string">"http://127.0.0.1:8080/v1"</span>
+MESSAGE=<span class="string">"Tell me a short story"</span>
+
+curl -s -N -X POST <span class="string">"$SERVER/chat/completions"</span> \
+  -H <span class="string">"Content-Type: application/json"</span> \
+  -d '{
+    "model": "openrouter/auto",
+    "messages": [
+      {"role": "user", "content": "'<span class="string">"$MESSAGE"</span>'"}
+    ],
+    "stream": true
+  }' | <span class="keyword">while</span> read -r line; <span class="keyword">do</span>
+    <span class="keyword">if</span> [[ <span class="string">"$line"</span> == data:* ]] && [[ <span class="string">"$line"</span> != <span class="string">"data: [DONE]"</span> ]]; <span class="keyword">then</span>
+        content=$(echo <span class="string">"${line#data: }"</span> | python3 -c <span class="string">"
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    content = data.get('choices', [{}])[0].get('delta', {}).get('content', '')
+    print(content, end='')
+except: pass
+"</span>)
+        <span class="keyword">echo</span> -n <span class="string">"$content"</span>
+    <span class="keyword">fi</span>
+<span class="keyword">done</span>
+<span class="keyword">echo</span></pre>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <!-- VLC Extension Section -->
+            <section id="vlc" class="page-section">
+                <div class="hero">
+                    <div class="hero-header">
+                        <h1>Saturn VLC Extension</h1>
+                        <button class="copy-page-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            Copy page
+                        </button>
+                    </div>
+                    <p class="subtitle">A VLC Media Player extension (v1.5.1) that integrates Saturn service discovery for context-aware AI interactions. Uses a bundled bridge executable for zero-configuration deployment (no Python installation required). Provides media metadata and playback context to AI services for informed responses.</p>
+                </div>
+
+                <section id="vlc-overview">
+                    <h2>Overview</h2>
+                    <p>The Saturn VLC extension connects VLC Media Player to Saturn AI services on your network via automatic mDNS discovery. When activated, it launches a bundled bridge executable that discovers Saturn services broadcasting on <code>_saturn._tcp.local.</code>. The extension captures media context (title, artist, album, genre, playback position) and includes this information with AI requests, enabling responses that are aware of the currently playing content.</p>
+
+                    <div class="diagram">
+                        <div class="diagram-title">Extension Architecture</div>
+                        <div class="diagram-content">
+                            <div class="diagram-box diagram-box-dark">
+                                VLC Player
+                                <small>Lua extension + media context</small>
+                            </div>
+                            <div class="diagram-connector-bidirectional"></div>
+                            <div class="diagram-box diagram-box-primary">
+                                Discovery Bridge
+                                <small>HTTP proxy + mDNS discovery</small>
+                            </div>
+                            <div class="diagram-connector-bidirectional"></div>
+                            <div class="diagram-box diagram-box-success">
+                                Saturn Service
+                                <small>AI backend</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3>Capabilities</h3>
+                    <ul>
+                        <li>Automatic Saturn service discovery via bundled bridge executable (no Python required)</li>
+                        <li>Embedded chat interface within VLC with HTML-formatted conversation history</li>
+                        <li>Media context injection (title, artist, album, genre, playback position, conversation start time) into AI requests</li>
+                        <li>Runtime service and model selection with automatic "best service" routing by priority</li>
+                        <li>Automatic bridge lifecycle management with graceful shutdown</li>
+                        <li>Configurable bridge URL for advanced setups</li>
+                        <li>Cross-platform support (Windows, macOS, Linux)</li>
+                    </ul>
+                </section>
+
+                <section id="vlc-installation">
+                    <h2>Installation</h2>
+
+                    <h3>What's Included</h3>
+                    <p>The VLC extension comes bundled with everything needed and no additional software installation required:</p>
+
+                    <ul>
+                        <li><code>saturn_chat.lua</code> — The VLC Lua extension (UI and logic)</li>
+                        <li><code>bridge/vlc_discovery_bridge.exe</code> — Windows bridge executable</li>
+                        <li><code>bridge/vlc_discovery_bridge</code> — Linux/macOS bridge executable</li>
+                    </ul>
+
+                    <h3>Installation Steps</h3>
+
+                    <ol class="steps-list">
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Download the Extension</div>
+                                <div class="step-desc">Download the <code>vlc_extension</code> folder from the Saturn repository.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Copy to VLC Extensions Directory</div>
+                                <div class="step-desc">Copy the entire folder to your VLC extensions location:
+                                    <br><br>
+                                    <strong>Windows:</strong> <code>%APPDATA%\vlc\lua\extensions\</code><br>
+                                    <strong>macOS:</strong> <code>~/Library/Application Support/org.videolan.vlc/lua/extensions/</code><br>
+                                    <strong>Linux:</strong> <code>~/.local/share/vlc/lua/extensions/</code>
+                                </div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Restart VLC</div>
+                                <div class="step-desc">If VLC was already running, restart it to load the extension.</div>
+                            </div>
+                        </li>
+                    </ol>
+
+                    <h3>Manual Copy</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Windows Command Prompt</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="keyword">xcopy</span> /E /I vlc_extension "%APPDATA%\vlc\lua\extensions\vlc_extension"</pre>
+                        </div>
+                    </div>
+
+                    <h3>Verifying Installation</h3>
+                    <ol>
+                        <li>Open VLC (restart if already running)</li>
+                        <li>Go to <strong>View → Extensions</strong></li>
+                        <li>You should see <strong>Saturn VLC Extension</strong> in the list</li>
+                    </ol>
+                </section>
+
+                <section id="vlc-download">
+                    <h2>Download</h2>
+                    <p>Download the Saturn VLC extension from the repository:</p>
+
+                    <div style="margin: 2rem 0; padding: 2rem; background: rgb(var(--gray-900)); border: 1px solid rgb(var(--gray-800)); border-radius: 0.75rem; text-align: center;">
+                        <a href="https://github.com/jperrello/Zeroconf-AI/tree/main/vlc_extension" target="_blank" class="btn btn-large">VLC Extension Repository</a>
+                    </div>
+
+                    <div class="callout callout-info">
+                        <div class="callout-title">System Requirements</div>
+                        <div class="callout-content">
+                            VLC Media Player 3.0 or later. The bridge executable is bundled for Windows (x64), macOS, and Linux platforms. No Python installation required - all dependencies are bundled via PyInstaller.
+                        </div>
+                    </div>
+                </section>
+
+                <section id="vlc-using">
+                    <h2>Using the Extension</h2>
+
+                    <h3>Activating Saturn Chat</h3>
+                    <ol>
+                        <li>Open VLC and play some media (music, video, podcast, etc.)</li>
+                        <li>Go to <strong>View → Extensions → Saturn VLC Extension</strong></li>
+                        <li>The "Saturn Chat - Media Intelligence" window will open and automatically:
+                            <ul>
+                                <li>Launch the bundled discovery bridge executable</li>
+                                <li>Wait for the bridge to initialize (uses port file for discovery)</li>
+                                <li>Search for Saturn services via mDNS</li>
+                                <li>Connect with retry logic (up to 7 attempts with exponential backoff)</li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <h3>The Chat Interface</h3>
+                    <p>The extension window contains:</p>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Element</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Bridge Configuration</td>
+                                <td>URL input field with Save button (defaults to http://127.0.0.1:9876)</td>
+                            </tr>
+                            <tr>
+                                <td>Service Status</td>
+                                <td>Shows connection status and number of available services</td>
+                            </tr>
+                            <tr>
+                                <td>Available Services</td>
+                                <td>Dropdown with Refresh and Select buttons. "Auto (Best Available)" selects by priority</td>
+                            </tr>
+                            <tr>
+                                <td>Model Selection</td>
+                                <td>Dropdown showing available models for the selected service with Select button</td>
+                            </tr>
+                            <tr>
+                                <td>Media Context</td>
+                                <td>Shows title, current position/duration, artist, and album of playing media</td>
+                            </tr>
+                            <tr>
+                                <td>Chat History</td>
+                                <td>HTML-formatted conversation with color-coded messages (blue for user, green for AI)</td>
+                            </tr>
+                            <tr>
+                                <td>Message Input</td>
+                                <td>Text input field with Send button</td>
+                            </tr>
+                            <tr>
+                                <td>Debug Label</td>
+                                <td>Shows current operation status for troubleshooting</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Starting a Conversation</h3>
+                    <ol>
+                        <li>Wait for the status to show "Connected - X service(s) available"</li>
+                        <li>Select a service from the dropdown and click <strong>Select</strong> (or leave on Auto)</li>
+                        <li>Select a model from the model dropdown and click <strong>Select</strong></li>
+                        <li>Type your message in the input box</li>
+                        <li>Click <strong>Send</strong></li>
+                    </ol>
+
+                    <p>The AI response incorporates media context including the current file name, playback position, duration, and any available metadata (artist, album, genre). The system prompt tells the AI it's integrated into VLC Media Player and can help with questions about the user's media.</p>
+
+                    <h3>Clearing the Chat</h3>
+                    <p>Click <strong>Clear Chat</strong> to reset conversation history. This clears all messages and resets the stored playback position context.</p>
+
+                    <h3>Deactivating</h3>
+                    <p>Close the extension window or select <strong>View → Extensions → Saturn VLC Extension</strong> again. The extension sends a POST request to the bridge's <code>/shutdown</code> endpoint and cleans up the port file from the temp directory.</p>
+                </section>
+
+                <section id="vlc-examples">
+                    <h2>Example Queries</h2>
+
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <div class="feature-card-title">Music Metadata</div>
+                            <div class="feature-card-desc">
+                                "Who composed this piece?"<br>
+                                "What album is this track from?"<br>
+                                "List similar artists in this genre"
+                            </div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-card-title">Video Information</div>
+                            <div class="feature-card-desc">
+                                "Who directed this film?"<br>
+                                "What is the release year?"<br>
+                                "List other works by this director"
+                            </div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-card-title">Podcast Analysis</div>
+                            <div class="feature-card-desc">
+                                "Summarize the discussion so far"<br>
+                                "What were the key points on that topic?"<br>
+                                "Identify the guest speaker"
+                            </div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-card-title">Educational Content</div>
+                            <div class="feature-card-desc">
+                                "Clarify that concept"<br>
+                                "Generate review questions"<br>
+                                "List prerequisite topics"
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="vlc-troubleshooting">
+                    <h2>Troubleshooting</h2>
+
+                    <details>
+                        <summary>Cannot connect to bridge</summary>
+                        <div>
+                            <p><strong>Symptom:</strong> Status displays "Cannot connect to bridge at http://127.0.0.1:9876"</p>
+                            <p><strong>Resolution:</strong></p>
+                            <ul>
+                                <li>The extension has built-in retry logic (7 attempts with exponential backoff up to 2.5s)</li>
+                                <li>Allow up to 10 seconds for bridge initialization</li>
+                                <li>Close and reopen the extension to restart the bridge</li>
+                                <li>Verify port 9876 is not in use: <code>netstat -ano | findstr 9876</code> (Windows) or <code>lsof -i :9876</code> (macOS/Linux)</li>
+                                <li>Check if firewall or antivirus is blocking the bridge executable</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details>
+                        <summary>No AI services available</summary>
+                        <div>
+                            <p><strong>Symptom:</strong> Bridge connects but reports "No healthy AI services available" or "Bridge connected but no AI services found"</p>
+                            <p><strong>Causes:</strong></p>
+                            <ul>
+                                <li>No Saturn servers running on the network</li>
+                                <li>Saturn servers running but not broadcasting on <code>_saturn._tcp.local.</code></li>
+                                <li>Firewall blocking mDNS traffic (UDP port 5353)</li>
+                                <li>Services unhealthy (failing <code>/v1/health</code> checks)</li>
+                            </ul>
+                            <p><strong>Resolution:</strong></p>
+                            <ul>
+                                <li>Start a Saturn server (OpenRouter or Ollama)</li>
+                                <li>Verify server health: <code>curl http://&lt;server&gt;:&lt;port&gt;/v1/health</code></li>
+                                <li>Check firewall allows mDNS traffic on UDP port 5353</li>
+                                <li>Click <strong>Refresh</strong> in the extension to re-query services</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details>
+                        <summary>Bridge executable not found</summary>
+                        <div>
+                            <p><strong>Symptoms:</strong> Extension loads but bridge doesn't start. VLC logs show "Bridge executable not found at..."</p>
+                            <p><strong>Solutions:</strong></p>
+                            <ul>
+                                <li>Verify the <code>bridge/</code> folder exists in your extension directory</li>
+                                <li>Check that it contains the correct executable:
+                                    <ul>
+                                        <li>Windows: <code>%APPDATA%\vlc\lua\extensions\vlc_extension\bridge\vlc_discovery_bridge.exe</code></li>
+                                        <li>macOS: <code>~/Library/Application Support/org.videolan.vlc/lua/extensions/vlc_extension/bridge/vlc_discovery_bridge</code></li>
+                                        <li>Linux: <code>~/.local/share/vlc/lua/extensions/vlc_extension/bridge/vlc_discovery_bridge</code></li>
+                                    </ul>
+                                </li>
+                                <li>On macOS/Linux, ensure the executable has run permissions:
+                                    <div class="code-block" style="margin-top: 0.5rem;">
+                                        <div class="code-content">
+<pre>chmod +x bridge/vlc_discovery_bridge</pre>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details>
+                        <summary>Port file timeout</summary>
+                        <div>
+                            <p><strong>Symptom:</strong> VLC logs show "Timeout waiting for bridge to start"</p>
+                            <p><strong>Resolution:</strong></p>
+                            <ul>
+                                <li>The bridge may be crashing on startup. Run it manually to see error messages:
+                                    <div class="code-block" style="margin-top: 0.5rem;">
+                                        <div class="code-content">
+<pre># Windows
+cd %APPDATA%\vlc\lua\extensions\vlc_extension\bridge\
+vlc_discovery_bridge.exe --port-file test.txt
+
+# Linux/macOS
+cd ~/.local/share/vlc/lua/extensions/vlc_extension/bridge/
+./vlc_discovery_bridge --port-file test.txt</pre>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li>Check if port 9876 is already in use</li>
+                                <li>Verify the bridge executable has correct permissions</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details>
+                        <summary>Viewing debug information</summary>
+                        <div>
+                            <ol>
+                                <li>In VLC, go to <strong>Tools → Messages</strong></li>
+                                <li>Set verbosity to <strong>2 - Debug</strong></li>
+                                <li>Look for messages starting with <code>[Saturn]</code></li>
+                            </ol>
+                            <p>A successful startup sequence looks like:</p>
+                            <div class="code-block">
+                                <div class="code-content">
+<pre>[Saturn] Extension activated
+[Saturn] OS detected: windows
+[Saturn] Extension dir: C:\...\vlc_extension\
+[Saturn] Launching bridge: C:\...\bridge\vlc_discovery_bridge.exe
+[Saturn] Port file: C:\Users\...\AppData\Local\Temp\vlc_bridge_port.txt
+[Saturn] Bridge process launched
+[Saturn] Port file found: http://127.0.0.1:9876
+[Saturn] Waiting for server to fully initialize...
+[Saturn] Bridge should be ready
+[Saturn] Health check attempt 1/7
+[Saturn] Bridge connection successful!</pre>
+                                </div>
+                            </div>
+                            <p>If the sequence breaks, the last message indicates where the failure occurred. The debug label at the bottom of the extension window also shows the current operation status.</p>
+                        </div>
+                    </details>
+                </section>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Navigation functionality
+        function showSection(sectionId) {
+            // Update nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.dataset.section === sectionId) {
+                    tab.classList.add('active');
+                }
+            });
+
+            // Update page sections
+            document.querySelectorAll('.page-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+
+            // Update sidebars
+            document.querySelectorAll('.sidebar-nav').forEach(nav => {
+                nav.style.display = 'none';
+            });
+            document.getElementById('sidebar-' + sectionId).style.display = 'block';
+
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        // Handle nav tab clicks
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                showSection(tab.dataset.section);
+            });
+        });
+
+        // Handle sidebar link clicks
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                const href = link.getAttribute('href');
+                if (href.startsWith('#')) {
+                    // Update active state
+                    link.closest('.sidebar-nav').querySelectorAll('.sidebar-link').forEach(l => {
+                        l.classList.remove('active');
+                    });
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // Copy code functionality
+        function copyCode(button) {
+            const codeBlock = button.closest('.code-block');
+            const code = codeBlock.querySelector('.code-content').textContent;
+
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Scroll-based active link detection
+        function setupScrollSpy() {
+            const sections = document.querySelectorAll('section[id]');
+
+            const observerOptions = {
+                root: null,
+                rootMargin: '-120px 0px -60% 0px',
+                threshold: 0
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const sectionId = entry.target.id;
+                        const activeNav = document.querySelector('.sidebar-nav:not([style*="display: none"])');
+
+                        if (activeNav) {
+                            // Remove active from all links in current sidebar
+                            activeNav.querySelectorAll('.sidebar-link').forEach(link => {
+                                link.classList.remove('active');
+                            });
+
+                            // Add active to matching link
+                            const activeLink = activeNav.querySelector(`a[href="#${sectionId}"]`);
+                            if (activeLink) {
+                                activeLink.classList.add('active');
+                            }
+                        }
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        }
+
+        // Initialize scroll spy on page load
+        document.addEventListener('DOMContentLoaded', setupScrollSpy);
+
+        // ===== SEARCH FUNCTIONALITY =====
+
+        // Build search index from all sections
+        function buildSearchIndex() {
+            const index = [];
+            const pageSections = {
+                'user': 'User Guide',
+                'integrator': 'Integrator Guide',
+                'vlc': 'VLC Extension'
+            };
+
+            // Index all sections with IDs
+            document.querySelectorAll('section[id]').forEach(section => {
+                const id = section.id;
+                const h2 = section.querySelector('h2');
+                const h1 = section.closest('.page-section')?.querySelector('.hero h1');
+
+                if (h2) {
+                    // Determine which page this section belongs to
+                    const pageSection = section.closest('.page-section');
+                    const pageId = pageSection ? pageSection.id : 'user';
+                    const pageName = pageSections[pageId] || 'Documentation';
+
+                    // Get section title
+                    const title = h2.textContent.trim();
+
+                    // Get some content preview
+                    const firstP = section.querySelector('p');
+                    const preview = firstP ? firstP.textContent.trim().substring(0, 100) + '...' : '';
+
+                    index.push({
+                        id: id,
+                        pageId: pageId,
+                        title: title,
+                        pageName: pageName,
+                        preview: preview,
+                        searchText: (title + ' ' + preview).toLowerCase()
+                    });
+                }
+            });
+
+            // Also index the main page titles
+            Object.entries(pageSections).forEach(([pageId, pageName]) => {
+                const pageSection = document.getElementById(pageId);
+                if (pageSection) {
+                    const h1 = pageSection.querySelector('.hero h1');
+                    if (h1) {
+                        index.push({
+                            id: pageId,
+                            pageId: pageId,
+                            title: h1.textContent.trim(),
+                            pageName: pageName,
+                            preview: 'Main page',
+                            searchText: (h1.textContent + ' ' + pageName).toLowerCase()
+                        });
+                    }
+                }
+            });
+
+            return index;
+        }
+
+        const searchIndex = buildSearchIndex();
+        const searchInput = document.querySelector('.search-input');
+        const searchSuggestions = document.getElementById('search-suggestions');
+        let selectedSuggestionIndex = -1;
+
+        // Search and filter results
+        function searchDocs(query) {
+            if (!query || query.length < 2) return [];
+
+            const normalizedQuery = query.toLowerCase().trim();
+            const words = normalizedQuery.split(/\s+/);
+
+            return searchIndex.filter(item => {
+                // Check if all words match
+                return words.every(word => item.searchText.includes(word));
+            }).slice(0, 8); // Limit to 8 results
+        }
+
+        // Highlight matching text
+        function highlightMatch(text, query) {
+            if (!query) return text;
+            const words = query.toLowerCase().split(/\s+/);
+            let result = text;
+            words.forEach(word => {
+                if (word.length >= 2) {
+                    const regex = new RegExp(`(${word})`, 'gi');
+                    result = result.replace(regex, '<span class="search-suggestion-match">$1</span>');
+                }
+            });
+            return result;
+        }
+
+        // Render search suggestions
+        function renderSuggestions(results, query) {
+            if (results.length === 0) {
+                searchSuggestions.innerHTML = '<div class="search-no-results">No results found</div>';
+                searchSuggestions.classList.add('active');
+                return;
+            }
+
+            searchSuggestions.innerHTML = results.map((result, index) => `
+                <div class="search-suggestion" data-id="${result.id}" data-page="${result.pageId}" data-index="${index}">
+                    <div class="search-suggestion-title">${highlightMatch(result.title, query)}</div>
+                    <div class="search-suggestion-path">${result.pageName}</div>
+                </div>
+            `).join('');
+
+            searchSuggestions.classList.add('active');
+            selectedSuggestionIndex = -1;
+        }
+
+        // Navigate to a section
+        function navigateToSection(pageId, sectionId) {
+            // First show the correct page
+            showSection(pageId);
+
+            // Then scroll to the section
+            setTimeout(() => {
+                const element = document.getElementById(sectionId);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+
+            // Clear search
+            searchInput.value = '';
+            searchSuggestions.classList.remove('active');
+        }
+
+        // Handle search input
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value;
+            if (query.length >= 2) {
+                const results = searchDocs(query);
+                renderSuggestions(results, query);
+            } else {
+                searchSuggestions.classList.remove('active');
+            }
+        });
+
+        // Handle keyboard navigation
+        searchInput.addEventListener('keydown', (e) => {
+            const suggestions = searchSuggestions.querySelectorAll('.search-suggestion');
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, suggestions.length - 1);
+                updateSelectedSuggestion(suggestions);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+                updateSelectedSuggestion(suggestions);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedSuggestionIndex >= 0 && suggestions[selectedSuggestionIndex]) {
+                    const suggestion = suggestions[selectedSuggestionIndex];
+                    navigateToSection(suggestion.dataset.page, suggestion.dataset.id);
+                } else if (suggestions.length > 0) {
+                    // Navigate to first result
+                    const suggestion = suggestions[0];
+                    navigateToSection(suggestion.dataset.page, suggestion.dataset.id);
+                }
+            } else if (e.key === 'Escape') {
+                searchSuggestions.classList.remove('active');
+                searchInput.blur();
+            }
+        });
+
+        function updateSelectedSuggestion(suggestions) {
+            suggestions.forEach((s, i) => {
+                s.classList.toggle('selected', i === selectedSuggestionIndex);
+            });
+        }
+
+        // Handle suggestion clicks
+        searchSuggestions.addEventListener('click', (e) => {
+            const suggestion = e.target.closest('.search-suggestion');
+            if (suggestion) {
+                navigateToSection(suggestion.dataset.page, suggestion.dataset.id);
+            }
+        });
+
+        // Close suggestions when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-container')) {
+                searchSuggestions.classList.remove('active');
+            }
+        });
+
+        // Focus search on Ctrl/Cmd + K
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                searchInput.focus();
+            }
+        });
+
+        // ===== COPY PAGE FUNCTIONALITY =====
+
+        // Convert HTML element to Markdown
+        function htmlToMarkdown(element) {
+            let markdown = '';
+
+            // Process child nodes
+            element.childNodes.forEach(node => {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    markdown += node.textContent;
+                } else if (node.nodeType === Node.ELEMENT_NODE) {
+                    markdown += elementToMarkdown(node);
+                }
+            });
+
+            return markdown;
+        }
+
+        function elementToMarkdown(el) {
+            const tag = el.tagName.toLowerCase();
+
+            // Skip certain elements
+            if (el.classList.contains('copy-page-btn') ||
+                el.classList.contains('code-copy') ||
+                tag === 'button' ||
+                tag === 'svg') {
+                return '';
+            }
+
+            switch (tag) {
+                case 'h1':
+                    return `# ${el.textContent.trim()}\n\n`;
+                case 'h2':
+                    return `## ${el.textContent.trim()}\n\n`;
+                case 'h3':
+                    return `### ${el.textContent.trim()}\n\n`;
+                case 'h4':
+                    return `#### ${el.textContent.trim()}\n\n`;
+                case 'p':
+                    return `${processInlineElements(el)}\n\n`;
+                case 'ul':
+                    return processListItems(el, '-') + '\n';
+                case 'ol':
+                    return processListItems(el, '1.') + '\n';
+                case 'li':
+                    return processInlineElements(el);
+                case 'code':
+                    // Check if it's inside a pre (code block) or inline
+                    if (el.parentElement?.tagName.toLowerCase() === 'pre') {
+                        return el.textContent;
+                    }
+                    return `\`${el.textContent}\``;
+                case 'pre':
+                    return el.textContent;
+                case 'a':
+                    const href = el.getAttribute('href');
+                    const text = el.textContent.trim();
+                    if (href && !href.startsWith('#')) {
+                        return `[${text}](${href})`;
+                    }
+                    return text;
+                case 'strong':
+                case 'b':
+                    return `**${el.textContent}**`;
+                case 'em':
+                case 'i':
+                    return `*${el.textContent}*`;
+                case 'br':
+                    return '\n';
+                case 'table':
+                    return processTable(el) + '\n';
+                case 'div':
+                    // Handle special div classes
+                    if (el.classList.contains('code-block')) {
+                        return processCodeBlock(el);
+                    } else if (el.classList.contains('callout')) {
+                        return processCallout(el);
+                    } else if (el.classList.contains('feature-grid')) {
+                        return processFeatureGrid(el);
+                    } else if (el.classList.contains('diagram')) {
+                        return processDiagram(el);
+                    } else if (el.classList.contains('hero')) {
+                        return processHero(el);
+                    }
+                    return htmlToMarkdown(el);
+                case 'section':
+                    return htmlToMarkdown(el);
+                case 'details':
+                    return processDetails(el);
+                case 'span':
+                    return el.textContent;
+                default:
+                    return htmlToMarkdown(el);
+            }
+        }
+
+        function processInlineElements(el) {
+            let text = '';
+            el.childNodes.forEach(node => {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    text += node.textContent;
+                } else if (node.nodeType === Node.ELEMENT_NODE) {
+                    const tag = node.tagName.toLowerCase();
+                    if (tag === 'code') {
+                        text += `\`${node.textContent}\``;
+                    } else if (tag === 'strong' || tag === 'b') {
+                        text += `**${node.textContent}**`;
+                    } else if (tag === 'em' || tag === 'i') {
+                        text += `*${node.textContent}*`;
+                    } else if (tag === 'a') {
+                        const href = node.getAttribute('href');
+                        if (href && !href.startsWith('#')) {
+                            text += `[${node.textContent}](${href})`;
+                        } else {
+                            text += node.textContent;
+                        }
+                    } else if (tag === 'br') {
+                        text += '\n';
+                    } else {
+                        text += node.textContent;
+                    }
+                }
+            });
+            return text.trim();
+        }
+
+        function processListItems(el, prefix) {
+            let markdown = '';
+            const items = el.querySelectorAll(':scope > li');
+            items.forEach((item, index) => {
+                const actualPrefix = prefix === '1.' ? `${index + 1}.` : prefix;
+                const content = processInlineElements(item);
+                markdown += `${actualPrefix} ${content}\n`;
+
+                // Handle nested lists
+                const nestedUl = item.querySelector('ul');
+                const nestedOl = item.querySelector('ol');
+                if (nestedUl) {
+                    const nested = processListItems(nestedUl, '-').split('\n').map(line => '  ' + line).join('\n');
+                    markdown += nested + '\n';
+                }
+                if (nestedOl) {
+                    const nested = processListItems(nestedOl, '1.').split('\n').map(line => '  ' + line).join('\n');
+                    markdown += nested + '\n';
+                }
+            });
+            return markdown;
+        }
+
+        function processCodeBlock(el) {
+            const filename = el.querySelector('.code-filename')?.textContent || '';
+            const code = el.querySelector('.code-content')?.textContent?.trim() || '';
+
+            // Try to determine language from filename
+            let lang = '';
+            if (filename.includes('.sh') || filename === 'Terminal') {
+                lang = 'bash';
+            } else if (filename.includes('.py')) {
+                lang = 'python';
+            } else if (filename.includes('.js')) {
+                lang = 'javascript';
+            }
+
+            return `\`\`\`${lang}\n${code}\n\`\`\`\n\n`;
+        }
+
+        function processTable(el) {
+            let markdown = '';
+            const headers = el.querySelectorAll('th');
+            const rows = el.querySelectorAll('tbody tr');
+
+            if (headers.length > 0) {
+                // Header row
+                markdown += '| ' + Array.from(headers).map(h => h.textContent.trim()).join(' | ') + ' |\n';
+                // Separator
+                markdown += '| ' + Array.from(headers).map(() => '---').join(' | ') + ' |\n';
+            }
+
+            // Data rows
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                markdown += '| ' + Array.from(cells).map(c => processInlineElements(c)).join(' | ') + ' |\n';
+            });
+
+            return markdown + '\n';
+        }
+
+        function processCallout(el) {
+            const title = el.querySelector('.callout-title')?.textContent || 'Note';
+            const content = el.querySelector('.callout-content')?.textContent?.trim() || '';
+            return `> **${title}**\n> ${content.split('\n').join('\n> ')}\n\n`;
+        }
+
+        function processFeatureGrid(el) {
+            let markdown = '';
+            el.querySelectorAll('.feature-card').forEach(card => {
+                const title = card.querySelector('.feature-card-title')?.textContent || '';
+                const desc = card.querySelector('.feature-card-desc')?.textContent?.trim() || '';
+                markdown += `**${title}**\n${desc}\n\n`;
+            });
+            return markdown;
+        }
+
+        function processDiagram(el) {
+            const title = el.querySelector('.diagram-title')?.textContent || 'Diagram';
+            return `*[${title}]*\n\n`;
+        }
+
+        function processHero(el) {
+            let markdown = '';
+            const h1 = el.querySelector('h1');
+            const subtitle = el.querySelector('.subtitle');
+
+            if (h1) {
+                markdown += `# ${h1.textContent.trim()}\n\n`;
+            }
+            if (subtitle) {
+                markdown += `${subtitle.textContent.trim()}\n\n`;
+            }
+            return markdown;
+        }
+
+        function processDetails(el) {
+            const summary = el.querySelector('summary')?.textContent?.trim() || '';
+            const content = el.querySelector('div');
+            let contentMd = '';
+            if (content) {
+                contentMd = htmlToMarkdown(content).trim();
+            }
+            return `<details>\n<summary>${summary}</summary>\n\n${contentMd}\n\n</details>\n\n`;
+        }
+
+        // Copy page content as Markdown
+        function copyPageAsMarkdown(button) {
+            // Find the active page section
+            const activeSection = document.querySelector('.page-section.active');
+            if (!activeSection) return;
+
+            // Convert to Markdown
+            const markdown = htmlToMarkdown(activeSection).trim();
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(markdown).then(() => {
+                // Show feedback
+                const originalHTML = button.innerHTML;
+                button.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Copied!
+                `;
+                button.classList.add('copied');
+
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        }
+
+        // Attach copy page handlers
+        document.querySelectorAll('.copy-page-btn').forEach(btn => {
+            btn.addEventListener('click', () => copyPageAsMarkdown(btn));
+        });
+
+    </script>
+</body>
+</html>
