@@ -1,4 +1,4 @@
-# Saturn: Zero-configuraion AI Service Discovery
+# Saturn: Zero-configuration AI Service Discovery
 
 *Are you tired of managing API keys for every single app that wants to use AI?*
 
@@ -92,22 +92,37 @@ This repository contains a working Saturn implementation that:
 
 Yes! Derek thought: "What if I could ask AI questions about the movie I'm watching?"
 
-So now you can. While watching any video in VLC, open the extension and:
+So now you can. The VLC extension comes in two flavors:
+
+**Saturn Chat** - Interactive AI chat about your media
 - Ask questions about the content you're watching
 - Get context-aware responses (AI knows what media file you're playing)
-- Automatically discovers AI services on your network
-- Switch between services right in the UI
+- Automatically discovers AI services on your network using DNS-SD
+- Switch between services and models right in the UI
+
+**Saturn Roast** - Entertainment roasting of your media taste
+- Get witty, sarcastic AI commentary about what you're watching
+- Analyzes your media (title, artist, album, genre)
+- Lighthearted entertainment powered by your Saturn AI services
+
+Both extensions use a bundled Python bridge that discovers Saturn services via DNS-SD (same mechanism as the Python clients). No separate Python installation needed!
 
 **Installation:**
+Copy the entire `vlc_extension/` directory to your VLC extensions folder:
 ```bash
-# Linux/macOS
-# Working on an install.sh file right now, but for now drag and drop lua file into vlc/extensions folder
+# Linux
+~/.local/share/vlc/lua/extensions/
+
+# macOS
+~/Library/Application Support/org.videolan.vlc/lua/extensions/
 
 # Windows
-cd vlc_extension && install_batch.bat
+%APPDATA%\vlc\lua\extensions\
 ```
 
-Then in VLC: View → AI chat ...
+Then in VLC:
+- **Chat**: View → Extensions → Saturn Chat
+- **Roast**: View → Extensions → Saturn Roast Extension
 
 
 ## Repository Structure
@@ -122,10 +137,14 @@ Zeroconf-AI/
 │   ├── simple_chat_client.py    # Basic example (<100 lines)
 │   ├── local_proxy_client.py    # Full-featured with failover
 │   └── file_upload_client.py    # Multimodal file support
-├── vlc_extension/        # VLC Media Player extension
-│   ├── zeroconf_ai_chat.lua     # VLC extension UI
-│   ├── vlc_discovery_bridge.py  # Python backend
-│   └── install_batch.bat        # Windows installer
+├── vlc_extension/        # VLC Media Player extensions
+│   ├── saturn_chat.lua          # VLC chat extension
+│   ├── saturn_roast.lua         # VLC roast extension
+│   ├── vlc_discovery_bridge.py  # Python bridge (source)
+│   ├── vlc_discovery_bridge.spec # PyInstaller build spec
+│   └── bridge/                  # Bundled executables
+│       ├── vlc_discovery_bridge     # Linux/macOS
+│       └── vlc_discovery_bridge.exe # Windows
 └── .env                  # Your OpenRouter API key goes here
 ```
 
@@ -135,8 +154,8 @@ Zeroconf-AI/
 
 1. **Set up your environment:**
 ```bash
-git clone https://github.com/jperrello/Zeroconf-AI.git
-cd Zeroconf-AI
+git clone https://github.com/jperrello/Saturn.git
+cd Saturn
 
 # Basic dependencies (required for all servers/clients)
 pip install fastapi uvicorn zeroconf python-dotenv requests pydantic
@@ -226,7 +245,24 @@ All of Derek's family's apps automatically use the gaming PC first (priority 10)
 
 ## Architecture
 
-**mDNS Service Type**: `_saturn._tcp.local.`
+**Service Discovery**: Saturn uses mDNS (Multicast DNS) for zero-configuration service discovery
+- **Service Type**: `_saturn._tcp.local.`
+- **Discovery Methods**:
+  - DNS-SD subprocess commands (`dns-sd -B`, `dns-sd -L`) - used by OpenRouter/Ollama servers, simple_chat_client, local_proxy_client, and VLC bridge
+  - Python zeroconf library - used by fallback_server and file_upload_client
+  - Both methods are fully compatible and discover the same services
+
+**Service Registration** (Servers):
+- Each server registers itself via mDNS when started
+- TXT records include: version, API type, features, and priority
+- Priority system (lower number = higher preference): 1-20 (local), 21-100 (standard), 101+ (fallback)
+- Automatic priority conflict resolution
+
+**Service Discovery** (Clients):
+- Continuous background browsing for Saturn services
+- Health monitoring and model discovery
+- Priority-based selection and automatic failover
+- Works across local network (same subnet)
 
 **API Endpoints**:
 - `/v1/health` - Check if service is alive
@@ -264,7 +300,7 @@ OpenRouter server: You pay for your own OpenRouter usage
 Your whole network shares one account instead of everyone getting their own.
 
 **"What's the VLC extension for?"**
-Ever wanted to ask questions about the movie you're watching? Now you can. The VLC extension lets you chat with AI while watching media, with full context awareness of what you're viewing.
+Ever wanted to ask questions about the movie you're watching? Now you can. Saturn Chat lets you chat with AI while watching media, with full context awareness of what you're viewing. Saturn Roast provides entertainment by roasting your media taste with witty AI commentary. Both use the same DNS-SD discovery as other Saturn clients.
 
 **"Can I run ALL the servers?"**
 Absolutely! Run one of each, give them different priorities, and let clients pick the best one. That's the whole point.
