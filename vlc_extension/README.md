@@ -1,33 +1,59 @@
-# VLC Saturn Extension - Build Instructions
+# VLC Saturn Extensions - Build Instructions
 
 ## Overview
 
-This VLC extension has been upgraded to use PyInstaller to bundle the discovery bridge into a standalone executable. This enables true "zero configuration" deployment - users no longer need Python installed.
+These VLC extensions integrate Saturn's mDNS service discovery into VLC media player. The extensions use PyInstaller to bundle the discovery bridge into a standalone executable, enabling true "zero configuration" deployment - users no longer need Python installed.
+
+The bridge automatically discovers Saturn AI services on your local network using the same `dns-sd` mDNS discovery mechanism as all other Saturn components.
+
+### Available Extensions
+
+**Saturn Chat** (`saturn_chat.lua`)
+- Interactive AI chat interface within VLC
+- Provides media-aware conversations by passing VLC playback context to AI
+- Allows asking questions about what you're watching/listening to
+- Full service and model selection capabilities
+
+**Saturn Roast** (`saturn_roast.lua`)
+- Entertainment extension that roasts your media taste
+- Analyzes currently playing media (title, artist, album, genre)
+- Generates witty, sarcastic commentary about your media choices
+- Lighthearted and fun AI-powered roasting experience
+
+Both extensions share the same discovery bridge and architecture, providing seamless access to all Saturn AI services on your network.
 
 ## Architecture
 
 ```
 vlc_extension/
-├── saturn_chat.lua          # VLC extension (UI and logic)
-├── vlc_discovery_bridge.py       # Python bridge (source code)
-├── vlc_discovery_bridge.spec     # PyInstaller spec file
-├── requirements.txt              # Python dependencies
-└── bridge/                       # Bundled executables
-    ├── vlc_discovery_bridge      # Linux/macOS executable
-    └── vlc_discovery_bridge.exe  # Windows executable
+├── saturn_chat.lua                # VLC chat extension (UI and logic)
+├── saturn_roast.lua               # VLC roast extension (UI and logic)
+├── vlc_discovery_bridge.py        # Python bridge (source code)
+├── vlc_discovery_bridge.spec      # PyInstaller spec file
+├── requirements.txt               # Python dependencies
+└── bridge/                        # Bundled executables
+    ├── vlc_discovery_bridge       # Linux/macOS executable
+    └── vlc_discovery_bridge.exe   # Windows executable
 ```
 
 ## How It Works
 
-1. User installs the VLC extension (copies directory to VLC extensions folder)
-2. User activates extension in VLC (View → Extensions → Saturn Chat)
+1. User installs the VLC extensions (copies directory to VLC extensions folder)
+2. User activates an extension in VLC:
+   - **Saturn Chat**: View → Extensions → Saturn Chat
+   - **Saturn Roast**: View → Extensions → Saturn Roast Extension
 3. Lua extension automatically:
    - Detects the operating system
    - Locates the bundled bridge executable
    - Launches the bridge with `--port-file` argument
    - Reads the port file to discover where the bridge is running
    - Connects to the bridge via HTTP
-4. When extension deactivates:
+4. Bridge discovers Saturn services:
+   - Uses `dns-sd` commands to browse for `_saturn._tcp.local` services
+   - Same discovery pattern as `simple_chat_client.py` and other Saturn components
+   - Monitors service health and available models
+   - Routes requests to best service based on priority (lowest = highest priority)
+5. When extension deactivates:
    - Sends `/shutdown` request to bridge
    - Bridge exits cleanly
 
@@ -69,60 +95,136 @@ PyInstaller creates platform-specific executables. To support all platforms:
 - **macOS**: Build on macOS (creates Mach-O binary)
 - **Windows**: Build on Windows (creates .exe)
 
-## Key Changes from Previous Version
+## Key Architecture Details
 
 ### Python Bridge (vlc_discovery_bridge.py)
 
-1. **Added `/shutdown` endpoint**: Allows Lua to cleanly terminate the bridge
-   ```python
-   @app.post("/shutdown")
-   async def shutdown():
-       logger.info("Shutdown requested")
-       # Schedule shutdown after returning response
-       def stop_server():
-           time.sleep(0.5)
-           os._exit(0)
-       threading.Thread(target=stop_server, daemon=True).start()
-       return {"status": "shutting_down"}
-   ```
+The bridge is a Saturn CLIENT that discovers and routes to Saturn services:
 
-2. **Added `--port-file` argument**: Writes host:port to a file for Lua discovery
-   ```bash
-   ./bridge/vlc_discovery_bridge --port-file /tmp/vlc_bridge_port.txt
-   ```
+1. **DNS-SD Service Discovery** (v2.0):
+   - Uses `dns-sd` subprocess commands (same pattern as `simple_chat_client.py`)
+   - Removed dependency on `python-zeroconf` library for consistency across Saturn
+   - Discovers services by running `dns-sd -B _saturn._tcp local`
+   - Gets service details with `dns-sd -L <service_name> _saturn._tcp local`
+   - Parses hostname, port, and priority from dns-sd output
+   - Continuous background discovery with configurable interval (default: 10s)
 
-   The bridge creates the file containing:
-   ```
-   127.0.0.1:9876
-   ```
+2. **Service Health Monitoring**:
+   - Continuously checks `/v1/health` on discovered services
+   - Fetches available models from `/v1/models`
+   - Only routes requests to healthy services
+   - Automatic failover when services become unavailable
 
-3. **Auto-cleanup**: Port file is automatically deleted when the bridge exits
+3. **Priority-Based Routing**:
+   - Routes requests to service with lowest priority number (highest preference)
+   - Same priority system as Saturn servers (1-20 = local, 21-100 = standard, 101+ = fallback)
+   - Users can optionally specify a specific service by name
 
-### Lua Extension (saturn_chat.lua)
+4. **Endpoints**:
+   - `/shutdown` - Allows Lua to cleanly terminate the bridge
+   - `/v1/health` - Health check endpoint
+   - `/v1/models` - Aggregates models from all healthy services
+   - `/v1/chat/completions` - Routes chat requests to best available service
+   - `/services` - Lists all discovered services with health status
+   - Both GET and POST supported for chat (VLC Lua compatibility)
+
+5. **Port File System**:
+   - Accepts `--port-file` argument for Lua discovery
+   - Writes `host:port` to file only after server is ready
+   - Auto-cleanup on exit
+
+### Lua Extensions (saturn_chat.lua & saturn_roast.lua)
+
+Both extensions share common functionality:
 
 1. **OS Detection**: Automatically detects Windows, macOS, or Linux
-2. **Bridge Launcher**: Launches the appropriate executable using `io.popen()`
+2. **Bridge Launcher**: Launches the appropriate executable using `os.execute()`
 3. **Port Discovery**: Reads the port file to find where the bridge is running
 4. **Dynamic URL**: Bridge URL is no longer hardcoded - discovered at runtime
-5. **Graceful Shutdown**: Sends shutdown signal to bridge on deactivation
+5. **Service Selection**: Displays all discovered Saturn services with model counts
+6. **Automatic Routing**: "Auto" mode selects best service by priority
+7. **Media Context**: Extracts VLC playback context (title, artist, album, genre, timestamp)
+8. **Graceful Shutdown**: Sends shutdown signal to bridge on deactivation
+
+**Saturn Chat** specific features:
+- Interactive chat interface with conversation history
+- Media-aware AI that can answer questions about current playback
+- Full conversation management and context passing
+
+**Saturn Roast** specific features:
+- Entertainment-focused roasting functionality
+- Custom system prompt for witty, sarcastic AI personality
+- Styled HTML output with purple/red "verdict" theming
+- Short-form responses (2-3 sentences) optimized for quick laughs
 
 ## Testing the Integration
 
-### Manual Test
+### Testing with Saturn Servers
+
+Before testing the VLC extension, you need running Saturn services to discover:
+
+1. **Start a Saturn server** (e.g., OpenRouter):
+   ```bash
+   # Ensure you have OPENROUTER_API_KEY and OPENROUTER_BASE_URL in .env
+   cd servers/
+   python openrouter_server.py
+   ```
+
+   You should see:
+   ```
+   OpenRouter has been registered via dns-sd with priority 50.
+   ```
+
+2. **Verify service registration** (optional):
+   ```bash
+   # In another terminal
+   dns-sd -B _saturn._tcp local
+   ```
+
+   You should see your OpenRouter service appear.
+
+### Manual Bridge Test
 
 1. Build the executable (see above)
 2. Test the executable directly:
    ```bash
+   # Windows
+   .\bridge\vlc_discovery_bridge.exe --port-file test_port.txt
+
+   # Linux/macOS
    ./bridge/vlc_discovery_bridge --port-file /tmp/test_port.txt
    ```
-3. Verify the port file was created:
+
+3. You should see:
+   ```
+   [INFO] Starting Saturn discovery bridge...
+   [INFO] Discovery bridge started - listening for Saturn services via mDNS
+   [INFO] Discovered: OpenRouter at http://192.168.1.10:8080 (priority=50)
+   [INFO] OpenRouter is now healthy
+   ```
+
+4. Verify the port file was created:
    ```bash
+   # Windows
+   type test_port.txt
+
+   # Linux/macOS
    cat /tmp/test_port.txt
    # Should output: 127.0.0.1:9876
    ```
-4. Test the endpoints:
+
+5. Test the endpoints:
    ```bash
+   # Check health
    curl http://127.0.0.1:9876/v1/health
+
+   # List discovered services
+   curl http://127.0.0.1:9876/services
+
+   # List available models
+   curl http://127.0.0.1:9876/v1/models
+
+   # Shutdown
    curl -X POST http://127.0.0.1:9876/shutdown
    ```
 
@@ -135,17 +237,54 @@ PyInstaller creates platform-specific executables. To support all platforms:
 
 2. Restart VLC
 
-3. Activate the extension: View → Extensions → Saturn Chat
+3. Activate an extension:
+   - **Saturn Chat**: View → Extensions → Saturn Chat
+   - **Saturn Roast**: View → Extensions → Saturn Roast Extension
 
 4. Check VLC logs (Tools → Messages) for:
    ```
-   [Saturn] OS detected: linux
+   [Saturn] OS detected: linux (or [Saturn Roast] for the roast extension)
    [Saturn] Extension dir: /path/to/extensions/vlc_extension/
    [Saturn] Launching bridge: /path/to/bridge/vlc_discovery_bridge
    [Saturn] Bridge running at: http://127.0.0.1:9876
    ```
 
-## Recent Fixes (v1.5.1)
+**Note**: Both extensions can share the same bridge instance if launched from the same VLC session. The first extension to activate will launch the bridge, and the second will connect to it.
+
+## Version History
+
+### v2.1 - Saturn Roast Extension
+**Changes:**
+- Added new entertainment extension: `saturn_roast.lua`
+- Roast extension provides witty AI commentary on user's media choices
+- Shares same bridge architecture and service discovery as Saturn Chat
+- Custom system prompt for comedic AI personality
+- Styled purple/red HTML output for roast display
+- Optimized for short-form responses (2-3 sentences)
+
+**Features:**
+- Analyzes currently playing media (title, artist, album, genre)
+- Interactive roasting experience with service/model selection
+- Same retry logic and connection handling as Saturn Chat
+- Supports all Saturn AI services discovered via mDNS
+
+### v2.0 - Saturn Integration
+**Changes:**
+- **Migrated to dns-sd subprocess discovery** for consistency with Saturn infrastructure
+- Removed `python-zeroconf` library dependency
+- Bridge now uses same discovery pattern as `simple_chat_client.py`
+- Consistent priority-based routing across all Saturn components
+- Better logging and service health monitoring
+- Updated requirements.txt (removed zeroconf)
+
+**Benefits:**
+- Single discovery mechanism across entire Saturn ecosystem
+- No proprietary Python libraries - uses native dns-sd commands
+- Works with existing Saturn servers (openrouter_server.py, ollama_server.py)
+- Easier to debug (can manually test with `dns-sd` commands)
+- Smaller executable size
+
+### v1.5.1 - Race Condition Fixes
 
 ### Fixed Race Condition & Windows Launch Issues
 

@@ -1,9 +1,11 @@
 import socket
+import subprocess
 import threading
 import time
 import argparse
 import os
 import sys
+import re
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -13,7 +15,6 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import uvicorn
 import requests
-from zeroconf import ServiceListener, ServiceBrowser, Zeroconf
 import logging
 import json
 
@@ -27,18 +28,14 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AIService:
     name: str
-    address: str
-    port: int
+    url: str
     priority: int
+    ip: str
     last_seen: datetime = field(default_factory=datetime.now)
     is_healthy: bool = False
     available_models: List[str] = field(default_factory=list)
     first_check_complete: bool = False
-    
-    @property
-    def url(self) -> str:
-        return f"http://{self.address}:{self.port}"
-    
+
     def to_dict(self) -> dict:
         return {
             "name": self.name,
@@ -50,54 +47,187 @@ class AIService:
         }
 
 class ServiceDiscovery:
-    def __init__(self):
+    """Background service discovery using DNS-SD subprocess (matches simple_chat_client.py pattern)"""
+    def __init__(self, discovery_interval: int = 10, on_service_change=None):
         self.services: Dict[str, AIService] = {}
         self.lock = threading.Lock()
-        self.zc = Zeroconf()
-        self.listener = self._create_listener()
-        # this is where we actively listen for _saturn._tcp.local. broadcasts on the network
-        self.browser = ServiceBrowser(self.zc, "_saturn._tcp.local.", self.listener)
-    
-    def _create_listener(self) -> ServiceListener:
-        discovery = self
-        
-        class Listener(ServiceListener):
-            # whenever a new zeroconf service appears, we capture its details here
-            def add_service(self, zc: Zeroconf, type_: str, name: str) -> None:
-                info = zc.get_service_info(type_, name)
-                if info and info.port:
-                    address = socket.inet_ntoa(info.addresses[0])
-                    port = info.port
-                    priority = info.priority if info.priority else 50
-                    
-                    with discovery.lock:
-                        discovery.services[name] = AIService(
-                            name=name,
-                            address=address,
-                            port=port,
-                            priority=priority
-                        )
-                    logger.info(f"Discovered: {name} at {address}:{port}")
-            
-            def update_service(self, zc: Zeroconf, type_: str, name: str) -> None:
-                self.add_service(zc, type_, name)
-            
-            def remove_service(self, zc: Zeroconf, type_: str, name: str) -> None:
-                with discovery.lock:
-                    if name in discovery.services:
-                        del discovery.services[name]
-                        logger.info(f"Removed: {name}")
-        
-        return Listener()
-    
-    def get_all_services(self) -> List[AIService]:
+        self.running = True
+        self.discovery_interval = discovery_interval
+        self.on_service_change = on_service_change
+        self.thread = threading.Thread(target=self._discovery_loop, daemon=True)
+        self.thread.start()
+
+    def _discovery_loop(self):
+        """Continuously discover services in background"""
+        while self.running:
+            try:
+                self._discover_services()
+            except Exception as e:
+                logger.debug(f"Discovery error: {e}")
+            time.sleep(self.discovery_interval)
+
+    def _discover_services(self):
+        """Single discovery pass using DNS-SD subprocess"""
+        discovered = self._run_dns_sd_discovery()
+        if discovered is None:
+            return
+
+        current_time = datetime.now()
+        discovered_names = set()
+
         with self.lock:
-            return list(self.services.values())
-    
+            # Update or add discovered services
+            for svc in discovered:
+                discovered_names.add(svc['name'])
+
+                if svc['name'] not in self.services:
+                    # New service
+                    self.services[svc['name']] = AIService(
+                        name=svc['name'],
+                        url=svc['url'],
+                        priority=svc['priority'],
+                        ip=svc['ip'],
+                        last_seen=current_time
+                    )
+                    logger.info(f"Discovered: {svc['name']} at {svc['url']} (priority={svc['priority']})")
+                    if self.on_service_change:
+                        self.on_service_change('added', svc['name'], svc['url'], svc['priority'])
+                else:
+                    # Update existing
+                    service = self.services[svc['name']]
+                    service.url = svc['url']
+                    service.priority = svc['priority']
+                    service.ip = svc['ip']
+                    service.last_seen = current_time
+
+            # Remove services that disappeared
+            removed = [name for name in self.services.keys() if name not in discovered_names]
+            for name in removed:
+                service = self.services[name]
+                del self.services[name]
+                logger.info(f"Removed: {name}")
+                if self.on_service_change:
+                    self.on_service_change('removed', name, service.url, service.priority)
+
+    def _run_dns_sd_discovery(self) -> Optional[List[dict]]:
+        """Run dns-sd discovery and return list of services (same pattern as simple_chat_client.py)"""
+        services = []
+
+        try:
+            # Browse for services
+            browse_proc = subprocess.Popen(
+                ['dns-sd', '-B', '_saturn._tcp', 'local'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+
+            time.sleep(2.0)
+            browse_proc.terminate()
+
+            try:
+                stdout, stderr = browse_proc.communicate(timeout=2)
+            except subprocess.TimeoutExpired:
+                browse_proc.kill()
+                stdout, stderr = browse_proc.communicate()
+
+            # Parse service names
+            service_names = []
+            for line in stdout.split('\n'):
+                if 'Add' in line and '_saturn._tcp' in line:
+                    parts = line.split()
+                    if len(parts) > 6:
+                        service_names.append(parts[6])
+
+            # Get details for each service
+            for service_name in service_names:
+                try:
+                    lookup_proc = subprocess.Popen(
+                        ['dns-sd', '-L', service_name, '_saturn._tcp', 'local'],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True
+                    )
+
+                    time.sleep(1.5)
+                    lookup_proc.terminate()
+
+                    try:
+                        stdout, stderr = lookup_proc.communicate(timeout=2)
+                    except subprocess.TimeoutExpired:
+                        lookup_proc.kill()
+                        stdout, stderr = lookup_proc.communicate()
+
+                    hostname = None
+                    port = None
+                    priority = 50  # Default priority
+
+                    for line in stdout.split('\n'):
+                        if 'can be reached at' in line:
+                            match = re.search(r'can be reached at (.+):(\d+)', line)
+                            if match:
+                                hostname = match.group(1).rstrip('.')
+                                port = int(match.group(2))
+
+                        if 'priority=' in line:
+                            parts = line.split('priority=')
+                            if len(parts) > 1:
+                                priority_str = parts[1].split()[0]
+                                priority = int(priority_str)
+
+                    if hostname and port:
+                        try:
+                            ip_address = socket.gethostbyname(hostname)
+                        except socket.gaierror:
+                            ip_address = hostname
+
+                        service_url = f"http://{ip_address}:{port}"
+                        services.append({
+                            'name': service_name,
+                            'url': service_url,
+                            'priority': priority,
+                            'ip': ip_address
+                        })
+
+                except (subprocess.TimeoutExpired, ValueError, IndexError):
+                    continue
+
+        except FileNotFoundError:
+            logger.warning("dns-sd command not found - ensure Bonjour/mDNS is installed")
+            return None
+        except Exception as e:
+            logger.debug(f"Discovery error: {e}")
+            return None
+
+        # Deduplicate by name, preferring non-loopback
+        unique_services = {}
+        for svc in services:
+            name = svc['name']
+            ip = svc['ip']
+            is_loopback = ip.startswith('127.') or ip == 'localhost'
+
+            if name not in unique_services:
+                unique_services[name] = svc
+            else:
+                existing = unique_services[name]
+                existing_is_loopback = existing['ip'].startswith('127.') or existing['ip'] == 'localhost'
+
+                if (svc['priority'] < existing['priority']) or \
+                   (svc['priority'] == existing['priority'] and existing_is_loopback and not is_loopback):
+                    unique_services[name] = svc
+
+        return list(unique_services.values())
+
+    def get_all_services(self) -> List[AIService]:
+        """Get all discovered services sorted by priority"""
+        with self.lock:
+            services = list(self.services.values())
+            return sorted(services, key=lambda s: s.priority)
+
     def get_service(self, name: str) -> Optional[AIService]:
         with self.lock:
             return self.services.get(name)
-    
+
     def get_service_by_partial_name(self, partial_name: str) -> Optional[AIService]:
         with self.lock:
             partial_lower = partial_name.lower()
@@ -105,47 +235,54 @@ class ServiceDiscovery:
                 if partial_lower in name.lower():
                     return service
             return None
-    
+
+    def get_best_service(self) -> Optional[AIService]:
+        """Get service with lowest priority (highest preference)"""
+        with self.lock:
+            if not self.services:
+                return None
+            return min(self.services.values(), key=lambda s: s.priority)
+
     def stop(self):
-        self.browser.cancel()
-        self.zc.close()
+        """Stop background discovery"""
+        self.running = False
 
 class HealthMonitor:
+    """Continuously monitor health of discovered services"""
     def __init__(self, discovery: ServiceDiscovery, check_interval: int = 10):
         self.discovery = discovery
         self.check_interval = check_interval
         self.running = True
         self.thread = threading.Thread(target=self._monitor_loop, daemon=True)
         self.thread.start()
-    
-    # continuously checking if discovered services are actually alive
+
     def _monitor_loop(self):
         while self.running:
             services = self.discovery.get_all_services()
-            
+
             for service in services:
                 was_healthy = service.is_healthy
                 service.is_healthy = self._check_health(service.url)
                 service.last_seen = datetime.now()
-                
+
                 if service.is_healthy:
                     service.available_models = self._fetch_models(service.url)
-                
+
                 if service.first_check_complete and service.is_healthy != was_healthy:
                     status = "healthy" if service.is_healthy else "unhealthy"
                     logger.info(f"{service.name} is now {status}")
-                
+
                 service.first_check_complete = True
-            
+
             time.sleep(self.check_interval)
-    
+
     def _check_health(self, url: str) -> bool:
         try:
             response = requests.get(f"{url}/v1/health", timeout=2)
             return response.status_code == 200
         except Exception:
             return False
-    
+
     def _fetch_models(self, url: str) -> List[str]:
         try:
             response = requests.get(f"{url}/v1/models", timeout=3)
@@ -155,37 +292,38 @@ class HealthMonitor:
         except Exception as e:
             logger.debug(f"Failed to fetch models from {url}: {e}")
         return []
-    
+
     def stop(self):
         self.running = False
 
 class BridgeManager:
+    """Manages service discovery and health monitoring"""
     def __init__(self):
         self.discovery = ServiceDiscovery()
         self.health_monitor = HealthMonitor(self.discovery)
-    
+
     def get_healthy_services(self) -> List[AIService]:
         services = self.discovery.get_all_services()
         return [s for s in services if s.is_healthy]
-    
-    # priority-based routing - lowest priority number wins (like dns records)
+
     def get_best_service(self) -> Optional[AIService]:
+        """Get best service by priority (lowest number = highest priority)"""
         services = self.get_healthy_services()
         if not services:
             return None
         return min(services, key=lambda s: s.priority)
-    
+
     def get_service_by_name(self, name: str) -> Optional[AIService]:
         service = self.discovery.get_service(name)
         if service and service.is_healthy:
             return service
-        
+
         service = self.discovery.get_service_by_partial_name(name)
         if service and service.is_healthy:
             return service
-        
+
         return None
-    
+
     def stop(self):
         self.health_monitor.stop()
         self.discovery.stop()
@@ -195,20 +333,21 @@ bridge_manager: Optional[BridgeManager] = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global bridge_manager
+    logger.info("Starting Saturn discovery bridge...")
     bridge_manager = BridgeManager()
-    logger.info("Discovery bridge started")
-    time.sleep(2)
-    
+    logger.info("Discovery bridge started - listening for Saturn services via mDNS")
+    time.sleep(2)  # Give discovery time to find initial services
+
     yield
-    
+
     if bridge_manager:
         bridge_manager.stop()
         logger.info("Discovery bridge stopped")
 
 app = FastAPI(
-    title="VLC AI Discovery Bridge",
-    description="Bridge between VLC Lua extension and Saturn services",
-    version="1.0",
+    title="VLC Saturn Discovery Bridge",
+    description="Bridge between VLC Lua extension and Saturn services using mDNS service discovery",
+    version="2.0",
     lifespan=lifespan
 )
 
@@ -226,8 +365,10 @@ class ChatRequest(BaseModel):
 @app.get("/")
 async def root():
     return {
-        "service": "VLC AI Discovery Bridge",
+        "service": "VLC Saturn Discovery Bridge",
+        "version": "2.0",
         "status": "running",
+        "discovery": "dns-sd (mDNS)",
         "endpoints": ["/v1/models", "/v1/chat/completions", "/v1/health", "/services"]
     }
 
@@ -235,7 +376,7 @@ async def root():
 async def get_services():
     if not bridge_manager:
         raise HTTPException(status_code=503, detail="Discovery not initialized")
-    
+
     services = bridge_manager.get_healthy_services()
     return {
         "count": len(services),
@@ -247,7 +388,7 @@ async def get_services():
 async def health():
     if not bridge_manager:
         return {"status": "starting"}
-    
+
     services = bridge_manager.get_healthy_services()
     return {
         "status": "ready" if services else "no_services",
@@ -289,17 +430,17 @@ async def shutdown():
 
     return {"status": "shutting_down"}
 
-# vlc's lua can't do post easily, so we support both get and post for chat completions
+# VLC's Lua can't do POST easily, so we support both GET and POST for chat completions
 @app.get("/v1/chat/completions")
 async def chat_completions_get(payload: str, service: Optional[str] = None, raw_request: Request = None):
     import urllib.parse
     try:
         decoded_payload = urllib.parse.unquote_plus(payload)
         request_data = json.loads(decoded_payload)
-        
+
         if service:
             request_data["service"] = service
-        
+
         chat_request = ChatRequest(**request_data)
         return await chat_completions_core(chat_request, raw_request)
     except json.JSONDecodeError as e:
@@ -311,56 +452,56 @@ async def chat_completions_get(payload: str, service: Optional[str] = None, raw_
 async def chat_completions(request: ChatRequest, raw_request: Request):
     return await chat_completions_core(request, raw_request)
 
-# this is where the bridge decides which discovered service to route the request to
 async def chat_completions_core(request: ChatRequest, raw_request: Request):
+    """Route chat requests to discovered Saturn services based on priority"""
     if not bridge_manager:
         raise HTTPException(status_code=503, detail="Discovery not initialized")
-    
+
     service = None
-    
-    # user can explicitly request a specific service, otherwise we pick the best one by priority
+
+    # User can explicitly request a specific service, otherwise we pick the best one by priority
     if request.service:
         service = bridge_manager.get_service_by_name(request.service)
         if not service:
             raise HTTPException(
-                status_code=404, 
+                status_code=404,
                 detail=f"Requested service '{request.service}' not found or unhealthy"
             )
     else:
         service = bridge_manager.get_best_service()
         if not service:
             raise HTTPException(status_code=503, detail="No AI services available")
-    
+
     model = request.model
     if not model and service.available_models:
         model = service.available_models[0]
-    
+
     if not model:
         raise HTTPException(status_code=503, detail="No models available on selected service")
-    
+
     payload = {
         "model": model,
         "messages": [{"role": msg.role, "content": msg.content} for msg in request.messages],
         "stream": request.stream
     }
-    
+
     if request.max_tokens is not None:
         payload["max_tokens"] = request.max_tokens
-    
-    logger.info(f"Routing chat to {service.name} using model {model}")
-    
+
+    logger.info(f"Routing chat to {service.name} ({service.url}) using model {model}")
+
     try:
-        # forwarding the actual request to the selected zeroconf service
+        # Forward the request to the selected Saturn service
         response = requests.post(
             f"{service.url}/v1/chat/completions",
             json=payload,
             timeout=60,
             stream=request.stream
         )
-        
+
         if response.status_code != 200:
             raise HTTPException(status_code=response.status_code, detail=f"AI service error: {response.text}")
-        
+
         if request.stream:
             async def generate():
                 try:
@@ -371,7 +512,7 @@ async def chat_completions_core(request: ChatRequest, raw_request: Request):
                             yield chunk
                 finally:
                     response.close()
-            
+
             return StreamingResponse(
                 generate(),
                 media_type="text/event-stream",
@@ -382,11 +523,12 @@ async def chat_completions_core(request: ChatRequest, raw_request: Request):
             )
         else:
             return response.json()
-    
+
     except requests.RequestException as e:
         raise HTTPException(status_code=502, detail=f"Failed to connect to AI service: {str(e)}")
 
 def find_port_number(host: str, start_port: int = 9876, max_attempts: int = 20) -> int:
+    """Find an available port automatically"""
     for port in range(start_port, start_port + max_attempts):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -433,7 +575,7 @@ def wait_for_server_ready(host: str, port: int, timeout: int = 15) -> bool:
     return False
 
 def main():
-    parser = argparse.ArgumentParser(description="VLC AI Discovery Bridge")
+    parser = argparse.ArgumentParser(description="VLC Saturn Discovery Bridge")
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Host to bind to")
     parser.add_argument("--port", type=int, default=None, help="Port to bind to (auto-detect if not specified)")
     parser.add_argument("--port-file", type=str, default=None, help="File to write host:port to for Lua discovery")
@@ -445,11 +587,11 @@ def main():
         logger.error(f"Failed to find available port: {e}")
         sys.exit(1)
 
-    print("=" * 50)
-    print("  VLC AI Discovery Bridge")
-    print("=" * 50)
+    print("=" * 60)
+    print("  VLC Saturn Discovery Bridge")
+    print("=" * 60)
     print(f"Starting on {args.host}:{port}")
-    print(f"Discovering Saturn services...")
+    print(f"Discovering Saturn services via mDNS (dns-sd)...")
     if args.port_file:
         print(f"Port file: {args.port_file}")
     print()
