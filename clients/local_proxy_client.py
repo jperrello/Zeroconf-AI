@@ -1,7 +1,9 @@
 import argparse
 import socket
+import subprocess
 import threading
 import time
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, List, Optional, Set
@@ -11,7 +13,6 @@ from pydantic import BaseModel
 from typing import Literal
 import uvicorn
 import requests
-from zeroconf import ServiceListener, ServiceBrowser, Zeroconf
 import logging
 import json
 
@@ -40,43 +41,131 @@ class AIService:
         return f"http://{self.address}:{self.port}"
 
 class ServiceDiscovery:
-    def __init__(self):
+    def __init__(self, discovery_interval: int = 5):
         self.services: Dict[str, AIService] = {}
         self.lock = threading.Lock()
-        self.zc = Zeroconf()
-        self.listener = self._create_listener()
-        self.browser = ServiceBrowser(self.zc, "_saturn._tcp.local.", self.listener)
+        self.running = True
+        self.discovery_interval = discovery_interval
+        self.thread = threading.Thread(target=self._discovery_loop, daemon=True)
+        self.thread.start()
 
-    def _create_listener(self) -> ServiceListener:
-        discovery = self
+    def _discovery_loop(self):
+        """Continuously discover Saturn services using DNS-SD"""
+        while self.running:
+            try:
+                self._discover_services()
+            except Exception as e:
+                logger.error(f"Error in service discovery: {e}")
+            time.sleep(self.discovery_interval)
 
-        class Listener(ServiceListener):
-            def add_service(self, zc: Zeroconf, type_: str, name: str) -> None:
-                info = zc.get_service_info(type_, name)
-                if info and info.port:
-                    address = socket.inet_ntoa(info.addresses[0])
-                    port = info.port
-                    priority = info.priority if info.priority else 50
+    def _discover_services(self):
+        """Run DNS-SD commands to discover services"""
+        try:
+            # DNS-SD service browsing
+            browse_proc = subprocess.Popen(
+                ['dns-sd', '-B', '_saturn._tcp', 'local'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
 
-                    with discovery.lock:
-                        discovery.services[name] = AIService(
-                            name=name,
-                            address=address,
-                            port=port,
-                            priority=priority
-                        )
-                    logger.info(f"Discovered service: {name} at {address}:{port} (priority: {priority})")
+            time.sleep(2.0)
+            browse_proc.terminate()
 
-            def update_service(self, zc: Zeroconf, type_: str, name: str) -> None:
-                self.add_service(zc, type_, name)
+            try:
+                stdout, stderr = browse_proc.communicate(timeout=2)
+            except subprocess.TimeoutExpired:
+                browse_proc.kill()
+                stdout, stderr = browse_proc.communicate()
 
-            def remove_service(self, zc: Zeroconf, type_: str, name: str) -> None:
-                with discovery.lock:
-                    if name in discovery.services:
-                        del discovery.services[name]
-                        logger.info(f"Removed service: {name}")
+            # Parse service names from browse output
+            service_names = []
+            for line in stdout.split('\n'):
+                if 'Add' in line and '_saturn._tcp' in line:
+                    parts = line.split()
+                    if len(parts) > 6:
+                        service_name = parts[6]
+                        service_names.append(service_name)
 
-        return Listener()
+            # Track which services we've seen in this discovery round
+            discovered_services = set()
+
+            # Get details for each service
+            for service_name in service_names:
+                try:
+                    lookup_proc = subprocess.Popen(
+                        ['dns-sd', '-L', service_name, '_saturn._tcp', 'local'],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True
+                    )
+
+                    time.sleep(1.5)
+                    lookup_proc.terminate()
+
+                    try:
+                        stdout, stderr = lookup_proc.communicate(timeout=2)
+                    except subprocess.TimeoutExpired:
+                        lookup_proc.kill()
+                        stdout, stderr = lookup_proc.communicate()
+
+                    hostname = None
+                    port = None
+                    priority = 50  # default priority
+
+                    for line in stdout.split('\n'):
+                        if 'can be reached at' in line:
+                            match = re.search(r'can be reached at (.+):(\d+)', line)
+                            if match:
+                                hostname = match.group(1).rstrip('.')
+                                port = int(match.group(2))
+
+                        if 'priority=' in line:
+                            parts = line.split('priority=')
+                            if len(parts) > 1:
+                                priority_str = parts[1].split()[0]
+                                priority = int(priority_str)
+
+                    if hostname and port:
+                        try:
+                            ip_address = socket.gethostbyname(hostname)
+                        except socket.gaierror:
+                            ip_address = hostname
+
+                        discovered_services.add(service_name)
+
+                        with self.lock:
+                            if service_name not in self.services:
+                                self.services[service_name] = AIService(
+                                    name=service_name,
+                                    address=ip_address,
+                                    port=port,
+                                    priority=priority
+                                )
+                                logger.info(f"Discovered service: {service_name} at {ip_address}:{port} (priority: {priority})")
+                            else:
+                                # Update existing service
+                                service = self.services[service_name]
+                                service.address = ip_address
+                                service.port = port
+                                service.priority = priority
+
+                except (subprocess.TimeoutExpired, ValueError, IndexError) as e:
+                    logger.debug(f"Error looking up service {service_name}: {e}")
+                    continue
+
+            # Remove services that are no longer advertised
+            with self.lock:
+                services_to_remove = [name for name in self.services.keys() if name not in discovered_services]
+                for name in services_to_remove:
+                    del self.services[name]
+                    logger.info(f"Removed service: {name}")
+
+        except FileNotFoundError:
+            logger.error("dns-sd not found. Please install Bonjour services (Windows) or ensure dns-sd is available.")
+            self.running = False
+        except Exception as e:
+            logger.error(f"Error during service discovery: {e}")
 
     def get_all_services(self) -> List[AIService]:
         with self.lock:
@@ -87,8 +176,7 @@ class ServiceDiscovery:
             return self.services.get(name)
 
     def stop(self):
-        self.browser.cancel()
-        self.zc.close()
+        self.running = False
 
 class HealthMonitor:
     def __init__(self, discovery: ServiceDiscovery, check_interval: int = 20):

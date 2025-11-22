@@ -1,3 +1,17 @@
+"""
+Saturn Fallback Server - Zeroconf Implementation
+
+This server uses the Python zeroconf library for service registration and discovery.
+This is an alternative implementation to demonstrate different approaches.
+
+For a DNS-SD command-based implementation (using subprocess and dns-sd commands),
+see servers/openrouter_server.py or servers/ollama_server.py.
+
+Both approaches achieve the same goal - announcing Saturn services on the local network.
+The zeroconf library provides a pure-Python solution, while dns-sd uses the native
+system mDNS responder (available on macOS/Linux/Windows with Bonjour).
+"""
+
 import argparse
 import random
 import socket

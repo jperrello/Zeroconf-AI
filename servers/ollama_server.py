@@ -2,14 +2,13 @@ import argparse
 import socket
 import time
 import json
+import subprocess
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
-from zeroconf import ServiceInfo, Zeroconf, ServiceBrowser, ServiceListener
 import uvicorn
 import requests
 from pydantic import BaseModel
 from typing import Literal, List, Dict, Any
-import threading
 
 OLLAMA_BASE_URL = "http://localhost:11434"
 
@@ -228,80 +227,86 @@ async def chat_completions(request: UserAIRequest):
         print(f"Ollama connection error: {type(e).__name__}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ollama connection error: {str(e)}")
 
-class PriorityDiscoveryListener(ServiceListener):
-    def __init__(self):
-        self.priorities = set()
-        self.lock = threading.Lock()
-
-    def add_service(self, zc: Zeroconf, type_: str, name: str) -> None:
-        info = zc.get_service_info(type_, name)
-        if info and info.properties:
-            priority_bytes = info.properties.get(b'priority')
-            if priority_bytes:
-                with self.lock:
-                    try:
-                        priority_value = int(priority_bytes.decode('utf-8'))
-                        self.priorities.add(priority_value)
-                    except (ValueError, UnicodeDecodeError):
-                        pass
-
-    def update_service(self, zc: Zeroconf, type_: str, name: str) -> None:
-        self.add_service(zc, type_, name)
-
-    def remove_service(self, zc: Zeroconf, type_: str, name: str) -> None:
-        pass
-
 def find_available_priority(desired_priority: int, service_type: str) -> int:
-    discovery_zc = Zeroconf()
-    listener = PriorityDiscoveryListener()
-    
-    browser = ServiceBrowser(discovery_zc, service_type, listener)
-    
-    time.sleep(2.0)
-    
-    browser.cancel()
-    discovery_zc.close()
-    
+    priorities = set()
+
+    try:
+        # DNS-SD service browsing to check existing priorities
+        browse_proc = subprocess.Popen(
+            ['dns-sd', '-B', '_saturn._tcp', 'local'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        time.sleep(2.0)
+        browse_proc.terminate()
+
+        stdout, _ = browse_proc.communicate(timeout=1)
+
+        for line in stdout.split('\n'):
+            if '_saturn._tcp' in line:
+                try:
+                    service_name = line.split()[6] if len(line.split()) > 6 else None
+                    # Index [6] is where the service name appears in the space-separated output.
+                    # However, this is fragile - if the output format changes or a line doesn't have enough fields, there would be an IndexError.
+                    # The conditional if len(line.split()) > 6 else None protects against that.
+                    if service_name:
+                        lookup_proc = subprocess.run(
+                            ['dns-sd', '-L', service_name, '_saturn._tcp'],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            text=True,
+                            timeout=2
+                        )
+                        for lookup_line in lookup_proc.stdout.split('\n'):
+                            if 'priority=' in lookup_line:
+                                parts = lookup_line.split('priority=')
+                                if len(parts) > 1:
+                                    priority_str = parts[1].split()[0]
+                                    priorities.add(int(priority_str))
+                except (IndexError, ValueError, subprocess.TimeoutExpired):
+                    continue
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        print("dns-sd not available or timed out, using desired priority without checking")
+        return desired_priority
+
     current_priority = desired_priority
-    with listener.lock:
-        while current_priority in listener.priorities:
-            print(f"Priority {current_priority} is already in use, trying {current_priority + 1}...")
-            current_priority += 1
-    
+    while current_priority in priorities:
+        print(f"Priority {current_priority} is already in use, trying {current_priority + 1}...")
+        current_priority += 1
+
     if current_priority != desired_priority:
         print(f"Adjusted priority from {desired_priority} to {current_priority}")
-    
+
     return current_priority
 
-def register_saturn(port: int, priority: int, service_type: str) -> tuple[Zeroconf, ServiceInfo]:
+def register_saturn(port: int, priority: int, service_type: str) -> subprocess.Popen:
     actual_priority = find_available_priority(priority, service_type)
-    
-    zeroconf = Zeroconf()
 
     host = socket.gethostname()
-    host_ip = socket.gethostbyname(host)
+    service_name = f"Ollama"
 
-    service_name = f"Ollama.{service_type}"
+    # DNS-SD service registration using subprocess
+    txt_records = f"version=1.0 api=Ollama priority={actual_priority}"
 
-    info = ServiceInfo(
-        type_=service_type,
-        name=service_name,
-        port=port,
-        addresses=[socket.inet_aton(host_ip)],
-        server=f"{host}.local.",
-        properties={
-            'version': '1.0', 
-            'api': 'Ollama',
-            'priority': str(actual_priority)
-        },
-        priority=actual_priority
-    )
+    try:
+        registration_proc = subprocess.Popen(
+            [
+                'dns-sd', '-R',
+                service_name, '_saturn._tcp', 'local',
+                str(port), txt_records
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
 
-    zeroconf.register_service(info)
-
-    print(f"{service_name} has been registered with priority {actual_priority}.")
-
-    return zeroconf, info
+        print(f"{service_name} has been registered via dns-sd with priority {actual_priority}.")
+        return registration_proc
+    except FileNotFoundError:
+        print("ERROR: dns-sd not found. Please install Bonjour services (Windows) or ensure dns-sd is available.")
+        return None
 
 def find_port_number(host: str, start_port=8080, max_attempts=20) -> int:
     for port in range(start_port, start_port + max_attempts):
@@ -326,14 +331,15 @@ def main():
     print(f"Starting Ollama proxy on {args.host}:{port} with desired priority {args.priority}...")
 
     service_type = "_saturn._tcp.local."
-    zeroconf, service_info = register_saturn(port, priority=args.priority, service_type=service_type)
+    registration_proc = register_saturn(port, priority=args.priority, service_type=service_type)
 
     try:
         uvicorn.run(app, host=args.host, port=port)
     finally:
-        print("Unregistering service...")
-        zeroconf.unregister_service(service_info)
-        zeroconf.close()
+        if registration_proc:
+            print("Unregistering service...")
+            registration_proc.terminate()
+            registration_proc.wait(timeout=2)
 
 if __name__ == "__main__":
     main()

@@ -1,3 +1,17 @@
+"""
+Saturn File Upload Client - Zeroconf Implementation
+
+This client uses the Python zeroconf library for service discovery.
+This is an alternative implementation to demonstrate different approaches.
+
+For a DNS-SD command-based implementation (using subprocess and dns-sd commands),
+see clients/simple_chat_client.py or clients/local_proxy_client.py.
+
+Both approaches achieve the same goal - discovering Saturn services on the local network.
+The zeroconf library provides a pure-Python solution, while dns-sd uses the native
+system mDNS responder (available on macOS/Linux/Windows with Bonjour).
+"""
+
 from zeroconf import Zeroconf, ServiceBrowser, ServiceListener
 import socket
 import time
@@ -223,29 +237,80 @@ class FileContextManager:
         return None
 
 class SimpleListener(ServiceListener):
-    def __init__(self):
-        self.best_service_url = None
-        self.best_service_priority = float('inf')
+    def __init__(self, on_service_change=None):
+        self.services = {}  # name -> (url, priority)
         self.lock = threading.Lock()
         self.service_found = threading.Event()
+        self.on_service_change = on_service_change  # Callback for service changes
 
-    # listening for the first zeroconf service that broadcasts - we connect to the best priority
+    # listening for zeroconf services and storing all of them
     def add_service(self, zc: Zeroconf, type_: str, name: str) -> None:
         info = zc.get_service_info(type_, name)
         if not info:
             return
 
         with self.lock:
-            if info.priority < self.best_service_priority:
-                address = socket.inet_ntoa(info.addresses[0])
-                port = info.port
-                self.best_service_url = f"http://{address}:{port}"
-                self.best_service_priority = info.priority
-                self.service_found.set()
+            address = socket.inet_ntoa(info.addresses[0])
+            port = info.port
+            url = f"http://{address}:{port}"
+            priority = info.priority if info.priority else 50
+            # Clean up the service name (remove .local. suffix if present)
+            clean_name = name.replace('._saturn._tcp.local.', '')
+
+            is_new = clean_name not in self.services
+            self.services[clean_name] = {'url': url, 'priority': priority}
+            self.service_found.set()
+
+            # Notify about new service
+            if is_new and self.on_service_change:
+                self.on_service_change('added', clean_name, url, priority)
+
+    def remove_service(self, zc: Zeroconf, type_: str, name: str) -> None:
+        """Called when a service disappears from the network"""
+        clean_name = name.replace('._saturn._tcp.local.', '')
+
+        with self.lock:
+            if clean_name in self.services:
+                service_info = self.services[clean_name]
+                del self.services[clean_name]
+
+                # Notify about removed service
+                if self.on_service_change:
+                    self.on_service_change('removed', clean_name, service_info['url'], service_info['priority'])
+
+    def update_service(self, zc: Zeroconf, type_: str, name: str) -> None:
+        """Called when a service's information changes"""
+        # Treat updates as a re-add
+        self.add_service(zc, type_, name)
+
+    def get_best_service(self):
+        """Get the service with the lowest priority (highest preference)"""
+        with self.lock:
+            if not self.services:
+                return None, None
+            best = min(self.services.items(), key=lambda x: x[1]['priority'])
+            return best[0], best[1]['url']
+
+    def get_all_services(self):
+        """Get all discovered services sorted by priority"""
+        with self.lock:
+            return sorted(self.services.items(), key=lambda x: x[1]['priority'])
 
 def main():
+    # Track notifications to show to user
+    service_notifications = []
+    notification_lock = threading.Lock()
+
+    def handle_service_change(action, name, url, priority):
+        """Callback when services are added/removed"""
+        with notification_lock:
+            if action == 'added':
+                service_notifications.append(f"\n  ⚠️  New server discovered: {name} at {url} (priority: {priority})")
+            elif action == 'removed':
+                service_notifications.append(f"\n  ⚠️  Server removed: {name} (was at {url})")
+
     zc = Zeroconf()
-    listener = SimpleListener()
+    listener = SimpleListener(on_service_change=handle_service_change)
     # scanning the network for any service advertising _saturn._tcp.local.
     browser = ServiceBrowser(zc, "_saturn._tcp.local.", listener)
 
@@ -254,17 +319,50 @@ def main():
     if not listener.service_found.wait(timeout=3.0):
         print("No Saturn services found.")
         browser.cancel()
-        zc.close()  
+        zc.close()
         return
 
-    print(f"Connected to service at {listener.best_service_url} with priority {listener.best_service_priority}")
-    
+    # Get the best service (highest priority)
+    current_server_name, current_service_url = listener.get_best_service()
+    if not current_service_url:
+        print("No Saturn services found.")
+        browser.cancel()
+        zc.close()
+        return
+
+    print(f"Connected to server: {current_server_name} at {current_service_url}")
+    print("  (Discovery continues in background - new servers will be detected automatically)")
+
+    # Fetch available models from the server
+    try:
+        models_response = requests.get(f"{current_service_url}/v1/models", timeout=5)
+        if models_response.ok:
+            available_models = [model['id'] for model in models_response.json().get('models', [])]
+            if available_models:
+                current_model = available_models[0]
+                print(f"Using model: {current_model}")
+            else:
+                print("No models available from this server")
+                browser.cancel()
+                zc.close()
+                return
+        else:
+            print(f"Failed to fetch models from server")
+            browser.cancel()
+            zc.close()
+            return
+    except Exception as e:
+        print(f"Error fetching models: {e}")
+        browser.cancel()
+        zc.close()
+        return
+
     token_tracker = TokenTracker(warning_cost_cents=25)
     file_manager = FileContextManager(token_tracker)
-    
+
     chat_history = []
     context_injected = False
-    
+
     print("\n" + "="*60)
     print("Enhanced Saturn Chat Client")
     print("="*60)
@@ -275,13 +373,31 @@ def main():
     print("  /clear-files       - Remove all files")
     print("  /clear             - Clear chat history")
     print("  /info              - Show token usage info")
+    print("  /servers           - List all available servers")
+    print("  /change-server     - Change to a different server")
+    print("  /models            - List available models on current server")
+    print("  /change-model      - Change to a different model")
     print("  quit               - Exit")
-    print("\nUsing model: openrouter/auto (intelligent routing)")
     print("="*60 + "\n")
 
     while True:
+        # Display any service change notifications
+        with notification_lock:
+            if service_notifications:
+                for notification in service_notifications:
+                    print(notification)
+                service_notifications.clear()
+                print()  # Extra newline for readability
+
+        # Check if current server is still available
+        current_server_name, current_service_url = listener.get_best_service()
+        if not current_service_url:
+            print("\n  ⚠️  All servers offline! Waiting for services...")
+            time.sleep(2)
+            continue
+
         user_input = input("You: ").strip()
-        
+
         if not user_input:
             continue
             
@@ -327,7 +443,132 @@ def main():
             print(f"  Total cost:    ${summary['cost_usd']:.4f} ({summary['cost_cents']:.2f}¢)")
             print(f"  Warning at:    ${token_tracker.warning_cost_cents/100:.2f}")
             continue
-        
+
+        elif user_input == "/servers":
+            all_services = listener.get_all_services()
+            if not all_services:
+                print("No servers discovered")
+            else:
+                print(f"\nAvailable servers (current: {current_server_name}):")
+                for name, info in all_services:
+                    marker = " <- current" if name == current_server_name else ""
+                    print(f"  - {name} (priority: {info['priority']}, url: {info['url']}){marker}")
+            continue
+
+        elif user_input == "/change-server":
+            all_services = listener.get_all_services()
+            if len(all_services) <= 1:
+                print("Only one server available")
+                continue
+
+            print("\nAvailable servers:")
+            for i, (name, info) in enumerate(all_services, 1):
+                marker = " <- current" if name == current_server_name else ""
+                print(f"  {i}. {name} (priority: {info['priority']}){marker}")
+
+            try:
+                choice = input("\nEnter server name or number: ").strip()
+
+                # Try to parse as number first
+                try:
+                    idx = int(choice) - 1
+                    if 0 <= idx < len(all_services):
+                        new_server_name, new_server_info = all_services[idx]
+                    else:
+                        print("Invalid number")
+                        continue
+                except ValueError:
+                    # Not a number, treat as name
+                    matching = [s for s in all_services if s[0] == choice]
+                    if matching:
+                        new_server_name, new_server_info = matching[0]
+                    else:
+                        print(f"Server '{choice}' not found")
+                        continue
+
+                # Switch to new server
+                current_server_name = new_server_name
+                current_service_url = new_server_info['url']
+
+                # Fetch models from new server
+                try:
+                    models_response = requests.get(f"{current_service_url}/v1/models", timeout=5)
+                    if models_response.ok:
+                        available_models = [model['id'] for model in models_response.json().get('models', [])]
+                        if available_models:
+                            current_model = available_models[0]
+                            print(f"Switched to server: {current_server_name}")
+                            print(f"Using model: {current_model}")
+                            # Clear chat history when switching servers
+                            chat_history = []
+                            context_injected = False
+                        else:
+                            print("No models available from this server")
+                    else:
+                        print(f"Failed to fetch models from server")
+                except Exception as e:
+                    print(f"Error fetching models: {e}")
+            except KeyboardInterrupt:
+                print("\nCancelled")
+            continue
+
+        elif user_input == "/models":
+            try:
+                models_response = requests.get(f"{current_service_url}/v1/models", timeout=5)
+                if models_response.ok:
+                    available_models = [model['id'] for model in models_response.json().get('models', [])]
+                    if available_models:
+                        print(f"\nAvailable models on {current_server_name} (current: {current_model}):")
+                        for i, model in enumerate(available_models, 1):
+                            marker = " <- current" if model == current_model else ""
+                            print(f"  {i}. {model}{marker}")
+                    else:
+                        print("No models available")
+                else:
+                    print("Failed to fetch models")
+            except Exception as e:
+                print(f"Error: {e}")
+            continue
+
+        elif user_input == "/change-model":
+            try:
+                models_response = requests.get(f"{current_service_url}/v1/models", timeout=5)
+                if models_response.ok:
+                    available_models = [model['id'] for model in models_response.json().get('models', [])]
+                    if not available_models:
+                        print("No models available")
+                        continue
+
+                    print("\nAvailable models:")
+                    for i, model in enumerate(available_models, 1):
+                        marker = " <- current" if model == current_model else ""
+                        print(f"  {i}. {model}{marker}")
+
+                    choice = input("\nEnter model name or number: ").strip()
+
+                    # Try to parse as number first
+                    try:
+                        idx = int(choice) - 1
+                        if 0 <= idx < len(available_models):
+                            current_model = available_models[idx]
+                            print(f"Switched to model: {current_model}")
+                        else:
+                            print("Invalid number")
+                    except ValueError:
+                        # Not a number, treat as model name
+                        if choice in available_models:
+                            current_model = choice
+                            print(f"Switched to model: {current_model}")
+                        else:
+                            print(f"Model '{choice}' not found")
+                else:
+                    print("Failed to fetch models")
+            except KeyboardInterrupt:
+                print("\nCancelled")
+            except Exception as e:
+                print(f"Error: {e}")
+            continue
+
         elif user_input.startswith("/"):
             print(f"Unknown command: {user_input}")
             continue
@@ -340,16 +581,16 @@ def main():
             context_injected = True
         
         current_message = chat_history + [{"role": "user", "content": user_input}]
-        
+
         payload = {
-            "model": "openrouter/auto",
+            "model": current_model,
             "messages": current_message
         }
-        
+
         try:
-            # sending the actual chat request to whichever zeroconf service we discovered
+            # sending the actual chat request to whichever service we're connected to
             response = requests.post(
-                f"{listener.best_service_url}/v1/chat/completions", 
+                f"{current_service_url}/v1/chat/completions", 
                 json=payload,
                 timeout=120
             )
