@@ -36,6 +36,7 @@ This repository contains a working Saturn implementation that:
 3. **Requires zero configuration** on client devices - they just discover it automatically
 4. **Handles failover** - if one service dies, clients automatically switch to another
 5. **Priority-based routing** - prefer local models over cloud, or vice versa
+6. **Integrates with popular AI interfaces** - native support for Open WebUI, plus proxy support for Jan and other apps
 
 ## What's In This Repo
 
@@ -73,11 +74,13 @@ This repository contains a working Saturn implementation that:
 - Under 100 lines - read it to understand the protocol
 
 **Local Proxy Client (`clients/local_proxy_client.py`)**
+- Bridge for third-party apps without native Saturn support (like Jan)
 - Full-featured client with health monitoring
 - Discovers ALL services on your network
 - Automatic failover if a service goes down
 - Priority-based selection (use local before cloud, or configure your own preferences)
 - Maintains chat history across provider switches
+- Note: For Open WebUI, use the native `owui_saturn.py` function instead
 
 **File Upload Client (`clients/file_upload_client.py`)**
 - Advanced multimodal client supporting file uploads
@@ -85,6 +88,20 @@ This repository contains a working Saturn implementation that:
 - Token tracking and cost estimation
 - Automatic MIME type detection
 - Perfect for "analyze this image" or "summarize this document" use cases
+
+### Open WebUI Integration (`owui_saturn.py`)
+
+**The easiest way to use Saturn with a polished web interface**
+
+A custom function for Open WebUI that brings automatic service discovery to this popular web-based AI chat interface. No manual endpoint configuration - just install the function, enable it, and all your Saturn services appear in the model selector.
+
+- Automatic discovery of all Saturn services on your network
+- Model aggregation from multiple providers
+- Priority-based routing with failover
+- Configurable timeouts and caching
+- Full streaming support
+
+Works with both the Open WebUI desktop app and server installation.
 
 ### VLC Extension (`vlc_extension/`)
 
@@ -124,6 +141,42 @@ Then in VLC:
 - **Chat**: View → Extensions → Saturn Chat
 - **Roast**: View → Extensions → Saturn Roast Extension
 
+### Open WebUI Integration (`owui_saturn.py`)
+
+**Zero-configuration AI for Open WebUI**
+
+The `owui_saturn.py` file implements a dynamic service discovery pipe for Open WebUI that automatically discovers and connects to AI model services advertised on the local network. This pipe enables Open WebUI to seamlessly integrate with multiple LLM providers without manual configuration, leveraging zero-configuration networking (Zeroconf/mDNS) for automatic service discovery.
+
+**How It Works:**
+- **SaturnDiscovery**: Uses the `dns-sd` command-line tool to browse for services advertising the `_saturn._tcp` service type
+- **Pipe Class**: Implements the Open WebUI pipe interface with configurable valves for discovery timeout, failover behavior, cache TTL, and request timeout
+- **Model Routing and Failover**: Automatically routes requests to the appropriate service with failover support if primary services fail
+
+**Installation:**
+
+1. Install Open WebUI (either desktop app or server):
+   - Desktop: https://github.com/open-webui/desktop
+   - Server: https://github.com/open-webui/open-webui
+
+2. Add the Saturn function:
+   - Go to Settings → Admin Settings → Functions
+   - Click "+" → "Discover a Function"
+   - Search for "Saturn" and install
+   - Alternatively, copy the code from `owui_saturn.py` and paste into a new function
+
+3. Enable the function and refresh Open WebUI
+
+4. Start a Saturn server on your network
+
+5. Saturn models will appear in your model selector with the `SATURN/` prefix
+
+**Features:**
+- Automatic service discovery on your local network
+- Model aggregation from all discovered Saturn services
+- Priority-based routing with automatic failover
+- Configurable settings (discovery timeout, cache TTL, request timeout)
+- Full streaming support for real-time responses
+
 
 ## Repository Structure
 
@@ -145,6 +198,9 @@ Zeroconf-AI/
 │   └── bridge/                  # Bundled executables
 │       ├── vlc_discovery_bridge     # Linux/macOS
 │       └── vlc_discovery_bridge.exe # Windows
+├── docs/                 # Documentation website
+│   └── index.html               # Full documentation (User, Integrator, Integrations)
+├── owui_saturn.py        # Open WebUI function for Saturn integration
 └── .env                  # Your OpenRouter API key goes here
 ```
 
@@ -301,6 +357,9 @@ Your whole network shares one account instead of everyone getting their own.
 
 **"What's the VLC extension for?"**
 Ever wanted to ask questions about the movie you're watching? Now you can. Saturn Chat lets you chat with AI while watching media, with full context awareness of what you're viewing. Saturn Roast provides entertainment by roasting your media taste with witty AI commentary. Both use the same DNS-SD discovery as other Saturn clients.
+
+**"What about Open WebUI integration?"**
+Open WebUI is a feature-rich web interface for AI chat. The Saturn function (`owui_saturn.py`) integrates directly with Open WebUI to provide automatic service discovery. Install it as a function in Open WebUI, and all your Saturn services will appear automatically in the model selector. No manual endpoint configuration needed.
 
 **"Can I run ALL the servers?"**
 Absolutely! Run one of each, give them different priorities, and let clients pick the best one. That's the whole point.

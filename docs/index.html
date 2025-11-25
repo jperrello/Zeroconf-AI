@@ -1163,6 +1163,328 @@
             border-color: rgba(var(--success), 0.3);
             color: rgb(var(--success));
         }
+
+        /* Submit Integration Banner */
+        .submit-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+            padding: 1.5rem 2rem;
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 0.75rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .submit-banner-content {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            flex: 1;
+        }
+
+        .submit-banner-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 3rem;
+            height: 3rem;
+            background: rgba(var(--primary), 0.2);
+            border-radius: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .submit-banner-icon svg {
+            width: 1.5rem;
+            height: 1.5rem;
+            color: rgb(var(--primary-light));
+        }
+
+        .submit-banner-text h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: rgb(var(--gray-100));
+            margin: 0 0 0.25rem 0;
+        }
+
+        .submit-banner-text p {
+            font-size: 0.875rem;
+            color: rgb(var(--gray-400));
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .submit-banner-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: rgba(var(--primary), 0.2);
+            border: 1px solid rgba(var(--primary-light), 0.3);
+            border-radius: 0.5rem;
+            color: rgb(var(--primary-light));
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 150ms ease;
+            white-space: nowrap;
+        }
+
+        .submit-banner-btn:hover {
+            background: rgba(var(--primary), 0.3);
+            box-shadow: 0 0 20px rgba(var(--primary), 0.2);
+        }
+
+        .submit-banner-btn svg {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .submit-banner {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+
+            .submit-banner-content {
+                flex-direction: column;
+            }
+
+            .submit-banner-btn {
+                justify-content: center;
+            }
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 200ms ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: rgb(var(--gray-900));
+            border: 1px solid rgb(var(--gray-700));
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 32rem;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: translateY(20px);
+            transition: transform 200ms ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem;
+            border-bottom: 1px solid rgb(var(--gray-800));
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: rgb(var(--gray-100));
+            margin: 0;
+        }
+
+        .modal-close {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            background: transparent;
+            border: none;
+            border-radius: 0.375rem;
+            color: rgb(var(--gray-400));
+            cursor: pointer;
+            transition: all 150ms ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgb(var(--gray-200));
+        }
+
+        .modal-close svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: rgb(var(--gray-200));
+            margin-bottom: 0.5rem;
+        }
+
+        .form-label-optional {
+            font-weight: 400;
+            color: rgb(var(--gray-500));
+        }
+
+        .form-input,
+        .form-textarea {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            color: rgb(var(--gray-200));
+            font-family: inherit;
+            transition: all 150ms ease;
+        }
+
+        .form-input::placeholder,
+        .form-textarea::placeholder {
+            color: rgb(var(--gray-500));
+        }
+
+        .form-input:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: rgba(var(--primary-light), 0.5);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .form-textarea {
+            min-height: 5rem;
+            resize: vertical;
+        }
+
+        .form-hint {
+            font-size: 0.75rem;
+            color: rgb(var(--gray-500));
+            margin-top: 0.375rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 0.75rem;
+            padding: 1.5rem;
+            border-top: 1px solid rgb(var(--gray-800));
+        }
+
+        .btn-secondary {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            color: rgb(var(--gray-300));
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 150ms ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-primary {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            background: rgba(var(--primary), 0.2);
+            border: 1px solid rgba(var(--primary-light), 0.3);
+            border-radius: 0.5rem;
+            color: rgb(var(--primary-light));
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 150ms ease;
+        }
+
+        .btn-primary:hover {
+            background: rgba(var(--primary), 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Success state for form */
+        .form-success {
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+
+        .form-success-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 4rem;
+            height: 4rem;
+            background: rgba(var(--success), 0.2);
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+        }
+
+        .form-success-icon svg {
+            width: 2rem;
+            height: 2rem;
+            color: rgb(var(--success));
+        }
+
+        .form-success h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: rgb(var(--gray-100));
+            margin: 0 0 0.5rem 0;
+        }
+
+        .form-success p {
+            font-size: 0.875rem;
+            color: rgb(var(--gray-400));
+            margin: 0;
+            line-height: 1.6;
+        }
     </style>
 </head>
 <body>
@@ -1186,7 +1508,7 @@
             <nav class="nav-tabs">
                 <a href="#user" class="nav-tab active" data-section="user">User Guide</a>
                 <a href="#integrator" class="nav-tab" data-section="integrator">Integrator Guide</a>
-                <a href="#vlc" class="nav-tab" data-section="vlc">VLC Extension</a>
+                <a href="#integrations" class="nav-tab" data-section="integrations">Integrations</a>
             </nav>
         </div>
     </header>
@@ -1219,9 +1541,13 @@
             <!-- Integrator Guide Navigation -->
             <nav id="sidebar-integrator" class="sidebar-nav" style="display: none;">
                 <div class="sidebar-group">
-                    <div class="sidebar-title">Discovery</div>
+                    <div class="sidebar-title">Getting Started</div>
                     <a href="#int-overview" class="sidebar-link active">Overview</a>
-                    <a href="#int-service-discovery" class="sidebar-link">Service Discovery</a>
+                </div>
+                <div class="sidebar-group">
+                    <div class="sidebar-title">Service Discovery</div>
+                    <a href="#int-service-discovery" class="sidebar-link">DNS-SD Protocol</a>
+                    <a href="#int-zeroconf-library" class="sidebar-link">Zeroconf Library</a>
                     <a href="#int-service-properties" class="sidebar-link">Service Properties</a>
                 </div>
                 <div class="sidebar-group">
@@ -1237,22 +1563,42 @@
                 </div>
             </nav>
 
-            <!-- VLC Extension Navigation -->
-            <nav id="sidebar-vlc" class="sidebar-nav" style="display: none;">
+            <!-- Integrations Navigation -->
+            <nav id="sidebar-integrations" class="sidebar-nav" style="display: none;">
                 <div class="sidebar-group">
                     <div class="sidebar-title">Getting Started</div>
-                    <a href="#vlc-overview" class="sidebar-link active">Overview</a>
-                    <a href="#vlc-installation" class="sidebar-link">Installation</a>
-                    <a href="#vlc-download" class="sidebar-link">Download</a>
+                    <a href="#integrations-overview" class="sidebar-link active">Overview</a>
                 </div>
                 <div class="sidebar-group">
-                    <div class="sidebar-title">Usage</div>
-                    <a href="#vlc-using" class="sidebar-link">Using the Extension</a>
-                    <a href="#vlc-examples" class="sidebar-link">Example Conversations</a>
+                    <div class="sidebar-title">VLC Media Player</div>
+                    <a href="#vlc-extensions-architecture" class="sidebar-link">Shared Architecture</a>
+                    <a href="#vlc-roast-overview" class="sidebar-link">Roast Extension</a>
+                    <a href="#vlc-roast-installation" class="sidebar-link">Roast Installation</a>
+                    <a href="#vlc-roast-examples" class="sidebar-link">Using Roast</a>
+                    <a href="#vlc-chat-overview" class="sidebar-link">Chat Extension</a>
+                    <a href="#vlc-chat-installation" class="sidebar-link">Chat Installation</a>
+                    <a href="#vlc-download" class="sidebar-link">Download</a>
+                    <a href="#vlc-using" class="sidebar-link">Using Chat</a>
+                    <a href="#vlc-examples" class="sidebar-link">Example Queries</a>
+                    <a href="#vlc-troubleshooting" class="sidebar-link">Troubleshooting</a>
+                </div>
+                <div class="sidebar-group">
+                    <div class="sidebar-title">Jan AI Client</div>
+                    <a href="#jan-overview" class="sidebar-link">Overview</a>
+                    <a href="#jan-setup" class="sidebar-link">Setup</a>
+                    <a href="#jan-configuration" class="sidebar-link">Usage</a>
+                    <a href="#jan-benefits" class="sidebar-link">Benefits</a>
+                </div>
+                <div class="sidebar-group">
+                    <div class="sidebar-title">Open WebUI</div>
+                    <a href="#owui-overview" class="sidebar-link">Overview</a>
+                    <a href="#owui-setup" class="sidebar-link">Installation Options</a>
+                    <a href="#owui-function-setup" class="sidebar-link">Function Setup</a>
+                    <a href="#owui-usage" class="sidebar-link">Usage</a>
                 </div>
                 <div class="sidebar-group">
                     <div class="sidebar-title">Help</div>
-                    <a href="#vlc-troubleshooting" class="sidebar-link">Troubleshooting</a>
+                    <a href="#integrations-troubleshooting" class="sidebar-link">Troubleshooting</a>
                 </div>
             </nav>
         </aside>
@@ -1328,6 +1674,56 @@
                         <li>Run multiple servers for redundancy and load distribution</li>
                         <li>Deploy new services without reconfiguring existing applications</li>
                     </ul>
+
+                    <h3>Discovery Methods</h3>
+                    <p>Saturn's service discovery is based on mDNS (multicast DNS) and DNS-SD (DNS Service Discovery). This approach has several advantages:</p>
+
+                    <ul>
+                        <li><strong>Universal compatibility:</strong> Available on all major operating systems without additional software</li>
+                        <li><strong>Language agnostic:</strong> Can be implemented in any programming language through simple subprocess calls</li>
+                        <li><strong>Zero configuration:</strong> Works automatically on local networks without DNS servers or service registries</li>
+                        <li><strong>Real-time updates:</strong> Clients are notified immediately when services appear or disappear</li>
+                    </ul>
+
+                    <h4>How It Works for Users</h4>
+                    <p>When you start a Saturn server, it broadcasts its presence on your local network using mDNS. Any device on the same network can discover this service without knowing the server's IP address or port. This is similar to how your phone finds wireless printers or how smart home devices appear in your apps.</p>
+
+                    <p>You can manually query for Saturn services on your network using built-in system tools:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">macOS/Windows (with Bonjour)</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="comment"># Browse for all Saturn services</span>
+dns-sd -B _saturn._tcp local
+
+<span class="comment"># Get details about a specific service</span>
+dns-sd -L "ServiceName" _saturn._tcp local</pre>
+                        </div>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Linux (with Avahi)</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="comment"># Browse for all Saturn services with details</span>
+avahi-browse -r _saturn._tcp
+
+<span class="comment"># Continuous monitoring</span>
+avahi-browse -r _saturn._tcp --terminate</pre>
+                        </div>
+                    </div>
+
+                    <div class="callout callout-info">
+                        <div class="callout-title">Command-Line Tools</div>
+                        <div class="callout-content">
+                            The <code>dns-sd</code> command is available on macOS by default and on Windows when Bonjour Print Services is installed (included with iTunes or available separately). On Linux, install the <code>avahi-utils</code> package to get <code>avahi-browse</code>.
+                        </div>
+                    </div>
                 </section>
 
                 <section id="user-quick-start">
@@ -1652,6 +2048,48 @@ python clients/local_proxy_client.py --host 127.0.0.1 --port 8080</pre>
                         </div>
                     </div>
 
+                    <h3>Implementation Approaches</h3>
+                    <p>There are two primary methods for implementing Saturn service discovery in your application:</p>
+
+                    <ol>
+                        <li><strong>DNS-SD Command-Based Discovery (Recommended):</strong> Use native system commands (<code>dns-sd</code> or <code>avahi-browse</code>) via subprocess calls. This approach works in any programming language and requires no additional libraries. Used by most Saturn servers and clients including <code>servers/ollama_server.py</code>, <code>servers/openrouter_server.py</code>, and <code>clients/local_proxy_client.py</code>.</li>
+                        <li><strong>Zeroconf Python Library:</strong> Use the Python <code>zeroconf</code> library for pure-Python implementation. Provides cleaner API but requires installing a dependency. Used by <code>servers/fallback_server.py</code> and <code>clients/file_upload_client.py</code>.</li>
+                    </ol>
+
+                    <p>This section focuses on the DNS-SD command-based approach. For the zeroconf library approach, see <a href="#int-zeroconf-library">Discovery with Zeroconf Python Library</a>.</p>
+
+                    <h3>DNS-SD Command Reference</h3>
+
+                    <h4>Cross-Platform Commands</h4>
+                    <p>Different operating systems provide different tools for DNS-SD operations:</p>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Platform</th>
+                                <th>Command</th>
+                                <th>Installation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>macOS</td>
+                                <td><code>dns-sd</code></td>
+                                <td>Built-in (no installation needed)</td>
+                            </tr>
+                            <tr>
+                                <td>Windows</td>
+                                <td><code>dns-sd</code></td>
+                                <td>Install Bonjour Print Services (included with iTunes)</td>
+                            </tr>
+                            <tr>
+                                <td>Linux</td>
+                                <td><code>avahi-browse</code></td>
+                                <td><code>apt install avahi-utils</code> or <code>yum install avahi-tools</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
                     <h3>Discovery Process</h3>
 
                     <h4>Step 1: Browse for Services</h4>
@@ -1659,22 +2097,33 @@ python clients/local_proxy_client.py --host 127.0.0.1 --port 8080</pre>
 
                     <div class="code-block">
                         <div class="code-header">
-                            <span class="code-filename">macOS / Linux</span>
+                            <span class="code-filename">macOS / Windows</span>
                             <button class="code-copy" onclick="copyCode(this)">Copy</button>
                         </div>
                         <div class="code-content">
-<pre><span class="comment"># macOS</span>
-dns-sd -B _saturn._tcp local.
-
-<span class="comment"># Linux</span>
-avahi-browse -r _saturn._tcp</pre>
+<pre><span class="comment"># Browse for services (continues until interrupted)</span>
+dns-sd -B _saturn._tcp local</pre>
                         </div>
                     </div>
 
-                    <p>Example response:</p>
                     <div class="code-block">
                         <div class="code-header">
-                            <span class="code-filename">Response</span>
+                            <span class="code-filename">Linux</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="comment"># Browse with full resolution</span>
+avahi-browse -r _saturn._tcp
+
+<span class="comment"># Parseable output</span>
+avahi-browse -rpt _saturn._tcp</pre>
+                        </div>
+                    </div>
+
+                    <p>Example response (dns-sd):</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">dns-sd Output</span>
                         </div>
                         <div class="code-content">
 <pre>Browsing for _saturn._tcp.local.
@@ -1690,36 +2139,616 @@ Timestamp     A/R    Flags  if Domain    Service Type    Instance Name
 
                     <div class="code-block">
                         <div class="code-header">
-                            <span class="code-filename">macOS</span>
+                            <span class="code-filename">macOS / Windows</span>
                             <button class="code-copy" onclick="copyCode(this)">Copy</button>
                         </div>
                         <div class="code-content">
-<pre>dns-sd -L "OpenRouter" _saturn._tcp local.</pre>
+<pre>dns-sd -L "OpenRouter" _saturn._tcp local</pre>
                         </div>
                     </div>
 
                     <p>Example response:</p>
                     <div class="code-block">
                         <div class="code-header">
-                            <span class="code-filename">Response</span>
+                            <span class="code-filename">dns-sd Output</span>
                         </div>
                         <div class="code-content">
 <pre>Lookup OpenRouter._saturn._tcp.local.
 DATE: ---Sat 18 Nov 2024---
 OpenRouter._saturn._tcp.local. can be reached at DESKTOP-ABC.local.:8080
- priority=10 version=2.0 api=OpenRouter</pre>
+ priority=10 version=1.0 api=OpenRouter</pre>
                         </div>
                     </div>
 
                     <h4>Step 3: Resolve Host Address</h4>
-                    <p>Query for the A record to get the IP address:</p>
+                    <p>The hostname from Step 2 (e.g., <code>DESKTOP-ABC.local.</code>) needs to be resolved to an IP address. This is typically done automatically using your system's DNS resolver (<code>socket.gethostbyname()</code> in most languages).</p>
 
                     <div class="code-block">
                         <div class="code-header">
-                            <span class="code-filename">Response Format</span>
+                            <span class="code-filename">Example Resolution</span>
                         </div>
                         <div class="code-content">
 <pre>DESKTOP-ABC.local. has address 192.168.1.100</pre>
+                        </div>
+                    </div>
+
+                    <h3>Implementing Discovery in Your Application</h3>
+                    <p>Below are basic examples showing how to implement Saturn service discovery using subprocess calls to DNS-SD commands. These snippets demonstrate the core pattern used in Saturn's own clients and servers.</p>
+
+                    <h4>Python Implementation</h4>
+                    <p>This example shows the subprocess-based approach used by <code>clients/local_proxy_client.py</code>:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">saturn_discovery.py</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="keyword">import</span> subprocess
+<span class="keyword">import</span> time
+<span class="keyword">import</span> re
+<span class="keyword">import</span> socket
+
+<span class="keyword">def</span> <span class="function">discover_saturn_services</span>():
+    <span class="string">"""Discover all Saturn services on the local network."""</span>
+    services = []
+
+    <span class="comment"># Start browsing for services</span>
+    browse_proc = subprocess.Popen(
+        [<span class="string">'dns-sd'</span>, <span class="string">'-B'</span>, <span class="string">'_saturn._tcp'</span>, <span class="string">'local'</span>],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=<span class="keyword">True</span>
+    )
+
+    <span class="comment"># Let it run for 2 seconds to collect responses</span>
+    time.sleep(<span class="number">2.0</span>)
+    browse_proc.terminate()
+    stdout, _ = browse_proc.communicate(timeout=<span class="number">1</span>)
+
+    <span class="comment"># Parse service names from output</span>
+    service_names = []
+    <span class="keyword">for</span> line <span class="keyword">in</span> stdout.split(<span class="string">'\n'</span>):
+        <span class="keyword">if</span> <span class="string">'Add'</span> <span class="keyword">in</span> line <span class="keyword">and</span> <span class="string">'_saturn._tcp'</span> <span class="keyword">in</span> line:
+            parts = line.split()
+            <span class="keyword">if</span> len(parts) > <span class="number">6</span>:
+                service_names.append(parts[<span class="number">6</span>])
+
+    <span class="comment"># Resolve each service to get details</span>
+    <span class="keyword">for</span> service_name <span class="keyword">in</span> service_names:
+        lookup_proc = subprocess.Popen(
+            [<span class="string">'dns-sd'</span>, <span class="string">'-L'</span>, service_name, <span class="string">'_saturn._tcp'</span>, <span class="string">'local'</span>],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=<span class="keyword">True</span>
+        )
+
+        time.sleep(<span class="number">1.5</span>)
+        lookup_proc.terminate()
+        stdout, _ = lookup_proc.communicate(timeout=<span class="number">2</span>)
+
+        hostname = <span class="keyword">None</span>
+        port = <span class="keyword">None</span>
+        priority = <span class="number">50</span>  <span class="comment"># default</span>
+
+        <span class="comment"># Parse hostname and port</span>
+        <span class="keyword">for</span> line <span class="keyword">in</span> stdout.split(<span class="string">'\n'</span>):
+            <span class="keyword">if</span> <span class="string">'can be reached at'</span> <span class="keyword">in</span> line:
+                match = re.search(<span class="string">r'can be reached at (.+):(\d+)'</span>, line)
+                <span class="keyword">if</span> match:
+                    hostname = match.group(<span class="number">1</span>).rstrip(<span class="string">'.'</span>)
+                    port = int(match.group(<span class="number">2</span>))
+
+            <span class="comment"># Parse priority from TXT record</span>
+            <span class="keyword">if</span> <span class="string">'priority='</span> <span class="keyword">in</span> line:
+                parts = line.split(<span class="string">'priority='</span>)
+                <span class="keyword">if</span> len(parts) > <span class="number">1</span>:
+                    priority_str = parts[<span class="number">1</span>].split()[<span class="number">0</span>]
+                    priority = int(priority_str)
+
+        <span class="keyword">if</span> hostname <span class="keyword">and</span> port:
+            <span class="comment"># Resolve hostname to IP address</span>
+            <span class="keyword">try</span>:
+                ip_address = socket.gethostbyname(hostname)
+            <span class="keyword">except</span> socket.gaierror:
+                ip_address = hostname
+
+            services.append({
+                <span class="string">'name'</span>: service_name,
+                <span class="string">'address'</span>: ip_address,
+                <span class="string">'port'</span>: port,
+                <span class="string">'priority'</span>: priority,
+                <span class="string">'url'</span>: <span class="string">f"http://{ip_address}:{port}"</span>
+            })
+
+    <span class="comment"># Sort by priority (lowest first)</span>
+    services.sort(key=<span class="keyword">lambda</span> s: s[<span class="string">'priority'</span>])
+    <span class="keyword">return</span> services
+
+<span class="comment"># Example usage</span>
+<span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:
+    services = discover_saturn_services()
+    <span class="keyword">for</span> service <span class="keyword">in</span> services:
+        print(<span class="string">f"{service['name']}: {service['url']} (priority: {service['priority']})"</span>)</pre>
+                        </div>
+                    </div>
+
+                    <h4>TypeScript/Node.js Implementation</h4>
+                    <p>Basic service discovery using Node.js child processes:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">saturnDiscovery.ts</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="keyword">import</span> { spawn } <span class="keyword">from</span> <span class="string">'child_process'</span>;
+<span class="keyword">import</span> { promisify } <span class="keyword">from</span> <span class="string">'util'</span>;
+
+<span class="keyword">interface</span> <span class="type">SaturnService</span> {
+  name: <span class="type">string</span>;
+  address: <span class="type">string</span>;
+  port: <span class="type">number</span>;
+  priority: <span class="type">number</span>;
+  url: <span class="type">string</span>;
+}
+
+<span class="keyword">async</span> <span class="keyword">function</span> <span class="function">discoverSaturnServices</span>(): Promise&lt;<span class="type">SaturnService</span>[]&gt; {
+  <span class="keyword">const</span> services: <span class="type">SaturnService</span>[] = [];
+
+  <span class="comment">// Browse for services</span>
+  <span class="keyword">const</span> browseProc = spawn(<span class="string">'dns-sd'</span>, [<span class="string">'-B'</span>, <span class="string">'_saturn._tcp'</span>, <span class="string">'local'</span>]);
+  <span class="keyword">let</span> browseOutput = <span class="string">''</span>;
+
+  browseProc.stdout.on(<span class="string">'data'</span>, (data) =&gt; {
+    browseOutput += data.toString();
+  });
+
+  <span class="comment">// Wait 2 seconds for responses</span>
+  <span class="keyword">await</span> <span class="keyword">new</span> Promise(resolve =&gt; setTimeout(resolve, <span class="number">2000</span>));
+  browseProc.kill();
+
+  <span class="comment">// Parse service names</span>
+  <span class="keyword">const</span> serviceNames: <span class="type">string</span>[] = [];
+  <span class="keyword">const</span> lines = browseOutput.split(<span class="string">'\n'</span>);
+
+  <span class="keyword">for</span> (<span class="keyword">const</span> line <span class="keyword">of</span> lines) {
+    <span class="keyword">if</span> (line.includes(<span class="string">'Add'</span>) && line.includes(<span class="string">'_saturn._tcp'</span>)) {
+      <span class="keyword">const</span> parts = line.split(<span class="string">/\s+/</span>);
+      <span class="keyword">if</span> (parts.length &gt; <span class="number">6</span>) {
+        serviceNames.push(parts[<span class="number">6</span>]);
+      }
+    }
+  }
+
+  <span class="comment">// Resolve each service</span>
+  <span class="keyword">for</span> (<span class="keyword">const</span> serviceName <span class="keyword">of</span> serviceNames) {
+    <span class="keyword">const</span> lookupProc = spawn(<span class="string">'dns-sd'</span>, [
+      <span class="string">'-L'</span>, serviceName, <span class="string">'_saturn._tcp'</span>, <span class="string">'local'</span>
+    ]);
+
+    <span class="keyword">let</span> lookupOutput = <span class="string">''</span>;
+    lookupProc.stdout.on(<span class="string">'data'</span>, (data) =&gt; {
+      lookupOutput += data.toString();
+    });
+
+    <span class="keyword">await</span> <span class="keyword">new</span> Promise(resolve =&gt; setTimeout(resolve, <span class="number">1500</span>));
+    lookupProc.kill();
+
+    <span class="comment">// Parse connection details</span>
+    <span class="keyword">let</span> hostname: <span class="type">string</span> | <span class="keyword">null</span> = <span class="keyword">null</span>;
+    <span class="keyword">let</span> port: <span class="type">number</span> | <span class="keyword">null</span> = <span class="keyword">null</span>;
+    <span class="keyword">let</span> priority = <span class="number">50</span>;
+
+    <span class="keyword">const</span> lookupLines = lookupOutput.split(<span class="string">'\n'</span>);
+    <span class="keyword">for</span> (<span class="keyword">const</span> line <span class="keyword">of</span> lookupLines) {
+      <span class="keyword">const</span> reachMatch = line.match(<span class="string">/can be reached at (.+):(\d+)/</span>);
+      <span class="keyword">if</span> (reachMatch) {
+        hostname = reachMatch[<span class="number">1</span>].replace(<span class="string">/\.$/</span>, <span class="string">''</span>);
+        port = parseInt(reachMatch[<span class="number">2</span>]);
+      }
+
+      <span class="keyword">if</span> (line.includes(<span class="string">'priority='</span>)) {
+        <span class="keyword">const</span> priorityMatch = line.match(<span class="string">/priority=(\d+)/</span>);
+        <span class="keyword">if</span> (priorityMatch) {
+          priority = parseInt(priorityMatch[<span class="number">1</span>]);
+        }
+      }
+    }
+
+    <span class="keyword">if</span> (hostname && port) {
+      services.push({
+        name: serviceName,
+        address: hostname,
+        port,
+        priority,
+        url: <span class="string">`http://${hostname}:${port}`</span>
+      });
+    }
+  }
+
+  <span class="comment">// Sort by priority</span>
+  services.sort((a, b) =&gt; a.priority - b.priority);
+  <span class="keyword">return</span> services;
+}
+
+<span class="comment">// Example usage</span>
+discoverSaturnServices().then(services =&gt; {
+  services.forEach(service =&gt; {
+    console.log(<span class="string">`${service.name}: ${service.url} (priority: ${service.priority})`</span>);
+  });
+});</pre>
+                        </div>
+                    </div>
+
+                    <h4>Go Implementation</h4>
+                    <p>Basic service discovery using Go's exec package:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">saturn_discovery.go</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="keyword">package</span> main
+
+<span class="keyword">import</span> (
+    <span class="string">"bufio"</span>
+    <span class="string">"context"</span>
+    <span class="string">"fmt"</span>
+    <span class="string">"os/exec"</span>
+    <span class="string">"regexp"</span>
+    <span class="string">"sort"</span>
+    <span class="string">"strconv"</span>
+    <span class="string">"strings"</span>
+    <span class="string">"time"</span>
+)
+
+<span class="keyword">type</span> <span class="type">SaturnService</span> <span class="keyword">struct</span> {
+    Name     <span class="type">string</span>
+    Address  <span class="type">string</span>
+    Port     <span class="type">int</span>
+    Priority <span class="type">int</span>
+    URL      <span class="type">string</span>
+}
+
+<span class="keyword">func</span> <span class="function">discoverSaturnServices</span>() ([]<span class="type">SaturnService</span>, <span class="type">error</span>) {
+    <span class="keyword">var</span> services []<span class="type">SaturnService</span>
+
+    <span class="comment">// Create context with timeout for browse command</span>
+    ctx, cancel := context.WithTimeout(context.Background(), <span class="number">2</span>*time.Second)
+    <span class="keyword">defer</span> cancel()
+
+    <span class="comment">// Browse for services</span>
+    cmd := exec.CommandContext(ctx, <span class="string">"dns-sd"</span>, <span class="string">"-B"</span>, <span class="string">"_saturn._tcp"</span>, <span class="string">"local"</span>)
+    output, _ := cmd.Output()
+
+    <span class="comment">// Parse service names</span>
+    serviceNames := []<span class="type">string</span>{}
+    scanner := bufio.NewScanner(strings.NewReader(<span class="function">string</span>(output)))
+
+    <span class="keyword">for</span> scanner.Scan() {
+        line := scanner.Text()
+        <span class="keyword">if</span> strings.Contains(line, <span class="string">"Add"</span>) && strings.Contains(line, <span class="string">"_saturn._tcp"</span>) {
+            parts := strings.Fields(line)
+            <span class="keyword">if</span> <span class="function">len</span>(parts) &gt; <span class="number">6</span> {
+                serviceNames = <span class="function">append</span>(serviceNames, parts[<span class="number">6</span>])
+            }
+        }
+    }
+
+    <span class="comment">// Resolve each service</span>
+    <span class="keyword">for</span> _, serviceName := <span class="keyword">range</span> serviceNames {
+        ctx2, cancel2 := context.WithTimeout(context.Background(), <span class="number">2</span>*time.Second)
+        <span class="keyword">defer</span> cancel2()
+
+        cmd2 := exec.CommandContext(ctx2, <span class="string">"dns-sd"</span>, <span class="string">"-L"</span>, serviceName, <span class="string">"_saturn._tcp"</span>, <span class="string">"local"</span>)
+        output2, _ := cmd2.Output()
+
+        <span class="keyword">var</span> hostname <span class="type">string</span>
+        <span class="keyword">var</span> port <span class="type">int</span>
+        priority := <span class="number">50</span>
+
+        scanner2 := bufio.NewScanner(strings.NewReader(<span class="function">string</span>(output2)))
+        reachRegex := regexp.MustCompile(<span class="string">`can be reached at (.+):(\d+)`</span>)
+        priorityRegex := regexp.MustCompile(<span class="string">`priority=(\d+)`</span>)
+
+        <span class="keyword">for</span> scanner2.Scan() {
+            line := scanner2.Text()
+
+            <span class="comment">// Parse hostname and port</span>
+            <span class="keyword">if</span> matches := reachRegex.FindStringSubmatch(line); matches != <span class="keyword">nil</span> {
+                hostname = strings.TrimSuffix(matches[<span class="number">1</span>], <span class="string">"."</span>)
+                port, _ = strconv.Atoi(matches[<span class="number">2</span>])
+            }
+
+            <span class="comment">// Parse priority</span>
+            <span class="keyword">if</span> matches := priorityRegex.FindStringSubmatch(line); matches != <span class="keyword">nil</span> {
+                priority, _ = strconv.Atoi(matches[<span class="number">1</span>])
+            }
+        }
+
+        <span class="keyword">if</span> hostname != <span class="string">""</span> && port &gt; <span class="number">0</span> {
+            services = <span class="function">append</span>(services, <span class="type">SaturnService</span>{
+                Name:     serviceName,
+                Address:  hostname,
+                Port:     port,
+                Priority: priority,
+                URL:      fmt.Sprintf(<span class="string">"http://%s:%d"</span>, hostname, port),
+            })
+        }
+    }
+
+    <span class="comment">// Sort by priority</span>
+    sort.Slice(services, <span class="keyword">func</span>(i, j <span class="type">int</span>) <span class="type">bool</span> {
+        <span class="keyword">return</span> services[i].Priority &lt; services[j].Priority
+    })
+
+    <span class="keyword">return</span> services, <span class="keyword">nil</span>
+}
+
+<span class="keyword">func</span> <span class="function">main</span>() {
+    services, err := discoverSaturnServices()
+    <span class="keyword">if</span> err != <span class="keyword">nil</span> {
+        fmt.Printf(<span class="string">"Error: %v\n"</span>, err)
+        <span class="keyword">return</span>
+    }
+
+    <span class="keyword">for</span> _, service := <span class="keyword">range</span> services {
+        fmt.Printf(<span class="string">"%s: %s (priority: %d)\n"</span>,
+            service.Name, service.URL, service.Priority)
+    }
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="callout callout-tip">
+                        <div class="callout-title">Implementation Notes</div>
+                        <div class="callout-content">
+                            <ul>
+                                <li>These examples demonstrate the core discovery pattern - spawn the command, wait for output, parse results</li>
+                                <li>Production implementations should handle errors more gracefully and support continuous monitoring</li>
+                                <li>On Linux, replace <code>dns-sd</code> commands with <code>avahi-browse</code> and adjust parsing accordingly</li>
+                                <li>Consider implementing service registration (announcing your own services) using <code>dns-sd -R</code> for servers</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="int-zeroconf-library">
+                    <h2>Discovery with Zeroconf Python Library</h2>
+                    <p>As an alternative to subprocess-based DNS-SD commands, you can use the Python <code>zeroconf</code> library for a pure-Python implementation. This approach provides a cleaner API and better event handling but requires installing an additional dependency.</p>
+
+                    <h3>When to Use This Approach</h3>
+                    <ul>
+                        <li><strong>Python-only projects:</strong> If you're building in Python and don't mind the dependency</li>
+                        <li><strong>Cleaner API:</strong> The library provides a more Pythonic interface than parsing subprocess output</li>
+                        <li><strong>Event-driven discovery:</strong> Built-in support for continuous monitoring with callbacks</li>
+                        <li><strong>Cross-platform without external commands:</strong> Works consistently across platforms without requiring <code>dns-sd</code> or <code>avahi-browse</code></li>
+                    </ul>
+
+                    <h3>Installation</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Terminal</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre>pip install zeroconf</pre>
+                        </div>
+                    </div>
+
+                    <h3>Service Discovery with Zeroconf</h3>
+                    <p>This example is based on <code>clients/file_upload_client.py</code>:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">zeroconf_discovery.py</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="keyword">from</span> zeroconf <span class="keyword">import</span> ServiceBrowser, ServiceListener, Zeroconf
+<span class="keyword">import</span> socket
+<span class="keyword">import</span> time
+
+<span class="keyword">class</span> <span class="class">SaturnServiceListener</span>(ServiceListener):
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="parameter">self</span>):
+        <span class="parameter">self</span>.services = {}
+
+    <span class="keyword">def</span> <span class="function">add_service</span>(<span class="parameter">self</span>, zc: Zeroconf, type_: <span class="type">str</span>, name: <span class="type">str</span>) -> <span class="keyword">None</span>:
+        <span class="string">"""Called when a new service is discovered"""</span>
+        info = zc.get_service_info(type_, name)
+        <span class="keyword">if</span> <span class="keyword">not</span> info:
+            <span class="keyword">return</span>
+
+        <span class="comment"># Extract service details</span>
+        address = socket.inet_ntoa(info.addresses[<span class="number">0</span>])
+        port = info.port
+
+        <span class="comment"># Parse priority from TXT record</span>
+        priority = <span class="number">50</span>  <span class="comment"># default</span>
+        <span class="keyword">if</span> info.properties:
+            priority_bytes = info.properties.get(<span class="string">b'priority'</span>)
+            <span class="keyword">if</span> priority_bytes:
+                <span class="keyword">try</span>:
+                    priority = int(priority_bytes.decode(<span class="string">'utf-8'</span>))
+                <span class="keyword">except</span> (ValueError, UnicodeDecodeError):
+                    <span class="keyword">pass</span>
+
+        <span class="comment"># Clean up service name</span>
+        clean_name = name.replace(<span class="string">'._saturn._tcp.local.'</span>, <span class="string">''</span>)
+
+        <span class="parameter">self</span>.services[clean_name] = {
+            <span class="string">'name'</span>: clean_name,
+            <span class="string">'address'</span>: address,
+            <span class="string">'port'</span>: port,
+            <span class="string">'priority'</span>: priority,
+            <span class="string">'url'</span>: <span class="string">f"http://{address}:{port}"</span>
+        }
+
+        print(<span class="string">f"Discovered: {clean_name} at {address}:{port} (priority: {priority})"</span>)
+
+    <span class="keyword">def</span> <span class="function">remove_service</span>(<span class="parameter">self</span>, zc: Zeroconf, type_: <span class="type">str</span>, name: <span class="type">str</span>) -> <span class="keyword">None</span>:
+        <span class="string">"""Called when a service disappears"""</span>
+        clean_name = name.replace(<span class="string">'._saturn._tcp.local.'</span>, <span class="string">''</span>)
+        <span class="keyword">if</span> clean_name <span class="keyword">in</span> <span class="parameter">self</span>.services:
+            <span class="keyword">del</span> <span class="parameter">self</span>.services[clean_name]
+            print(<span class="string">f"Service removed: {clean_name}"</span>)
+
+    <span class="keyword">def</span> <span class="function">update_service</span>(<span class="parameter">self</span>, zc: Zeroconf, type_: <span class="type">str</span>, name: <span class="type">str</span>) -> <span class="keyword">None</span>:
+        <span class="string">"""Called when service information changes"""</span>
+        <span class="parameter">self</span>.add_service(zc, type_, name)
+
+    <span class="keyword">def</span> <span class="function">get_best_service</span>(<span class="parameter">self</span>):
+        <span class="string">"""Get the service with lowest priority"""</span>
+        <span class="keyword">if</span> <span class="keyword">not</span> <span class="parameter">self</span>.services:
+            <span class="keyword">return</span> <span class="keyword">None</span>
+        <span class="keyword">return</span> min(<span class="parameter">self</span>.services.values(), key=<span class="keyword">lambda</span> s: s[<span class="string">'priority'</span>])
+
+<span class="comment"># Example usage</span>
+<span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:
+    zeroconf = Zeroconf()
+    listener = SaturnServiceListener()
+
+    <span class="comment"># Start browsing for services</span>
+    browser = ServiceBrowser(zeroconf, <span class="string">"_saturn._tcp.local."</span>, listener)
+
+    <span class="keyword">try</span>:
+        <span class="comment"># Wait for services to be discovered</span>
+        print(<span class="string">"Searching for Saturn services..."</span>)
+        time.sleep(<span class="number">3</span>)
+
+        <span class="comment"># Get the best service</span>
+        best = listener.get_best_service()
+        <span class="keyword">if</span> best:
+            print(<span class="string">f"\nBest service: {best['name']} at {best['url']}"</span>)
+        <span class="keyword">else</span>:
+            print(<span class="string">"No services found"</span>)
+
+        <span class="comment"># Keep running to monitor for changes</span>
+        input(<span class="string">"Press Enter to stop...\n"</span>)
+
+    <span class="keyword">finally</span>:
+        browser.cancel()
+        zeroconf.close()</pre>
+                        </div>
+                    </div>
+
+                    <h3>Service Registration with Zeroconf</h3>
+                    <p>This example shows how to announce a Saturn service, based on <code>servers/fallback_server.py</code>:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">zeroconf_registration.py</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="keyword">from</span> zeroconf <span class="keyword">import</span> ServiceInfo, Zeroconf
+<span class="keyword">import</span> socket
+
+<span class="keyword">def</span> <span class="function">register_saturn_service</span>(port: <span class="type">int</span>, priority: <span class="type">int</span> = <span class="number">50</span>, service_name: <span class="type">str</span> = <span class="string">"MyService"</span>):
+    <span class="string">"""Register a Saturn service on the network"""</span>
+    zeroconf = Zeroconf()
+
+    <span class="comment"># Get local IP address</span>
+    hostname = socket.gethostname()
+    host_ip = socket.gethostbyname(hostname)
+
+    <span class="comment"># Create service info</span>
+    service_type = <span class="string">"_saturn._tcp.local."</span>
+    full_name = <span class="string">f"{service_name}.{service_type}"</span>
+
+    info = ServiceInfo(
+        type_=service_type,
+        name=full_name,
+        port=port,
+        addresses=[socket.inet_aton(host_ip)],
+        server=<span class="string">f"{hostname}.local."</span>,
+        properties={
+            <span class="string">'version'</span>: <span class="string">'1.0'</span>,
+            <span class="string">'api'</span>: <span class="string">'MyAPI'</span>,
+            <span class="string">'priority'</span>: str(priority)
+        },
+        priority=priority
+    )
+
+    <span class="comment"># Register the service</span>
+    zeroconf.register_service(info)
+    print(<span class="string">f"Registered {service_name} on port {port} with priority {priority}"</span>)
+
+    <span class="keyword">return</span> zeroconf, info
+
+<span class="comment"># Example usage</span>
+<span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:
+    zc, info = register_saturn_service(port=<span class="number">8080</span>, priority=<span class="number">10</span>, service_name=<span class="string">"TestServer"</span>)
+
+    <span class="keyword">try</span>:
+        input(<span class="string">"Service registered. Press Enter to stop...\n"</span>)
+    <span class="keyword">finally</span>:
+        zeroconf.unregister_service(info)
+        zeroconf.close()
+        print(<span class="string">"Service unregistered"</span>)</pre>
+                        </div>
+                    </div>
+
+                    <h3>Comparison: DNS-SD Commands vs Zeroconf Library</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Aspect</th>
+                                <th>DNS-SD Commands</th>
+                                <th>Zeroconf Library</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Language Support</strong></td>
+                                <td>Any language with subprocess support</td>
+                                <td>Python only</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Dependencies</strong></td>
+                                <td>System-level (dns-sd/avahi-browse)</td>
+                                <td>Python package (pip install)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>API Complexity</strong></td>
+                                <td>Parse text output from subprocess</td>
+                                <td>Clean object-oriented API</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Event Handling</strong></td>
+                                <td>Manual polling or parsing streaming output</td>
+                                <td>Built-in callback system</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Cross-Platform</strong></td>
+                                <td>Different commands per OS</td>
+                                <td>Consistent across all platforms</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Used In</strong></td>
+                                <td>ollama_server.py, openrouter_server.py, local_proxy_client.py</td>
+                                <td>fallback_server.py, file_upload_client.py</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="callout callout-tip">
+                        <div class="callout-title">Which Approach Should I Use?</div>
+                        <div class="callout-content">
+                            <p><strong>Use DNS-SD commands if:</strong></p>
+                            <ul>
+                                <li>You're not using Python, or want to minimize dependencies</li>
+                                <li>You need maximum portability across languages</li>
+                                <li>You want to match Saturn's reference implementations</li>
+                            </ul>
+                            <p><strong>Use the zeroconf library if:</strong></p>
+                            <ul>
+                                <li>You're building a Python-only application</li>
+                                <li>You prefer a cleaner API over subprocess management</li>
+                                <li>You need sophisticated event-driven service monitoring</li>
+                            </ul>
                         </div>
                     </div>
                 </section>
@@ -2301,11 +3330,11 @@ except: pass
                 </section>
             </section>
 
-            <!-- VLC Extension Section -->
-            <section id="vlc" class="page-section">
+            <!-- Integrations Section -->
+            <section id="integrations" class="page-section">
                 <div class="hero">
                     <div class="hero-header">
-                        <h1>Saturn VLC Extension</h1>
+                        <h1>Saturn Integrations</h1>
                         <button class="copy-page-btn">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -2314,12 +3343,101 @@ except: pass
                             Copy page
                         </button>
                     </div>
-                    <p class="subtitle">A VLC Media Player extension (v1.5.1) that integrates Saturn service discovery for context-aware AI interactions. Uses a bundled bridge executable for zero-configuration deployment (no Python installation required). Provides media metadata and playback context to AI services for informed responses.</p>
+                    <p class="subtitle">Integrate Saturn with your favorite applications and workflows. From VLC Media Player extensions that provide context-aware AI interactions to desktop AI clients like Jan, Saturn's integration-friendly architecture makes it easy to bring AI capabilities to the tools you already use.</p>
                 </div>
 
-                <section id="vlc-overview">
-                    <h2>Overview</h2>
-                    <p>The Saturn VLC extension connects VLC Media Player to Saturn AI services on your network via automatic mDNS discovery. When activated, it launches a bundled bridge executable that discovers Saturn services broadcasting on <code>_saturn._tcp.local.</code>. The extension captures media context (title, artist, album, genre, playback position) and includes this information with AI requests, enabling responses that are aware of the currently playing content.</p>
+               
+                <div class="submit-banner">
+                    <div class="submit-banner-content">
+                        <div class="submit-banner-text">
+                            <h3>Submit Your Integration</h3>
+                            <p>Built something cool with Saturn? Share your integration with the community and get it featured in our docs.</p>
+                        </div>
+                    </div>
+                    <button class="submit-banner-btn" onclick="openSubmitModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
+                        </svg>
+                        Submit Integration
+                    </button>
+                </div>
+
+                <section id="integrations-overview">
+                    <h2>Integration Philosophy</h2>
+                    <p>Saturn is designed to be an integration-friendly platform that works seamlessly with existing tools and workflows. Rather than forcing you to adopt new interfaces, Saturn brings AI capabilities to the applications you already use through two primary integration approaches:</p>
+
+                    <div class="feature-grid">
+                        <a href="#vlc-roast-overview" class="feature-card-link" data-link-placeholder="true">
+                            <div class="feature-card">
+                                <div class="feature-card-title">Native Extensions</div>
+                                <div class="feature-card-desc">
+                                    Application-specific extensions that deeply integrate Saturn services. These extensions leverage the host application's context and provide tailored AI interactions. Examples include the VLC Media Player extensions that understand media metadata and playback state.
+                                </div>
+                            </div>
+                        </a>
+                        <a href="#jan-overview" class="feature-card-link" data-link-placeholder="true">
+                            <div class="feature-card">
+                                <div class="feature-card-title">OpenAI-Compatible Proxy</div>
+                                <div class="feature-card-desc">
+                                    The local proxy client exposes Saturn services through an OpenAI-compatible API, enabling integration with any application that supports OpenAI's API format. This includes desktop AI clients, coding assistants, and custom applications.
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <h3>Why Integrate with Saturn?</h3>
+                    <ul>
+                        <li><strong>Automatic Service Discovery:</strong> No manual configuration of endpoints or API keys for each service</li>
+                        <li><strong>Unified Access:</strong> Access all Saturn network services through a single integration point</li>
+                        <li><strong>Automatic Failover:</strong> Requests automatically route to healthy services if one becomes unavailable</li>
+                        <li><strong>Priority-Based Routing:</strong> Services can advertise priority levels for intelligent request routing</li>
+                        <li><strong>Context-Aware:</strong> Integrations can leverage application-specific context (like media metadata) for more relevant AI responses</li>
+                        <li><strong>Zero-Configuration:</strong> mDNS-based discovery means services are found automatically on your network</li>
+                    </ul>
+
+                    <h3>Available Integrations</h3>
+                    <p>Saturn currently provides the following integrations, with more planned for the future:</p>
+
+                    <div class="feature-grid">
+                        <a href="#vlc-roast-overview" class="feature-card-link" data-link-placeholder="true">
+                            <div class="feature-card">
+                                <div class="feature-card-title">VLC Roast Extension</div>
+                                <div class="feature-card-desc">
+                                    Get roasted by AI based on your media taste. Witty, intelligent, and sarcastic comments about what you're watching or listening to.
+                                </div>
+                            </div>
+                        </a>
+                        <a href="#vlc-chat-overview" class="feature-card-link" data-link-placeholder="true">
+                            <div class="feature-card">
+                                <div class="feature-card-title">VLC Chat Extension</div>
+                                <div class="feature-card-desc">
+                                    Conversational AI assistant with media context awareness for intelligent discussions about your content.
+                                </div>
+                            </div>
+                        </a>
+                        <a href="#jan-overview" class="feature-card-link" data-link-placeholder="true">
+                            <div class="feature-card">
+                                <div class="feature-card-title">Jan AI Client</div>
+                                <div class="feature-card-desc">
+                                    Desktop AI client integration via local proxy, providing access to all Saturn services through Jan's polished interface.
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="callout callout-info">
+                        <div class="callout-title">Future Integrations</div>
+                        <div class="callout-content">
+                            The OpenAI-compatible proxy enables integration with many tools beyond those documented here. Potential candidates include Blender, Cursor, Open WebUI, and other AI-powered applications that support OpenAI API format.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VLC Media Player Integrations -->
+                <!-- Shared Architecture Section -->
+                <section id="vlc-extensions-architecture">
+                    <h2>VLC Extensions: Shared Architecture</h2>
+                    <p>Both Saturn VLC extensions (Roast and Chat) share the same underlying architecture, making them reliable, portable, and zero-configuration solutions for bringing AI capabilities to VLC Media Player.</p>
 
                     <div class="diagram">
                         <div class="diagram-title">Extension Architecture</div>
@@ -2341,20 +3459,199 @@ except: pass
                         </div>
                     </div>
 
-                    <h3>Capabilities</h3>
+                    <h3>How It Works</h3>
+                    <ol class="steps-list">
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Extension Activation</div>
+                                <div class="step-desc">When you activate either extension in VLC (View → Extensions), the Lua script automatically detects your operating system and launches the appropriate bundled bridge executable.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Bridge Initialization</div>
+                                <div class="step-desc">The bridge starts an HTTP server and begins discovering Saturn services via mDNS. It writes connection information to a temporary port file, allowing the Lua extension to connect.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Service Discovery</div>
+                                <div class="step-desc">The bridge continuously discovers Saturn AI services broadcasting on <code>_saturn._tcp.local</code>, monitors their health, and maintains a list of available models.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Extension Connection</div>
+                                <div class="step-desc">The Lua extension connects to the bridge using retry logic (up to 7 attempts with exponential backoff), retrieves available services, and presents them in the UI.</div>
+                            </div>
+                        </li>
+                    </ol>
+
+                    <h3>Key Components</h3>
                     <ul>
-                        <li>Automatic Saturn service discovery via bundled bridge executable (no Python required)</li>
-                        <li>Embedded chat interface within VLC with HTML-formatted conversation history</li>
-                        <li>Media context injection (title, artist, album, genre, playback position, conversation start time) into AI requests</li>
-                        <li>Runtime service and model selection with automatic "best service" routing by priority</li>
-                        <li>Automatic bridge lifecycle management with graceful shutdown</li>
-                        <li>Configurable bridge URL for advanced setups</li>
-                        <li>Cross-platform support (Windows, macOS, Linux)</li>
+                        <li><strong>Lua Extensions:</strong> <code>saturn_roast.lua</code> and <code>saturn_chat.lua</code> provide the user interface and media context extraction</li>
+                        <li><strong>Discovery Bridge:</strong> <code>vlc_discovery_bridge.py</code> (bundled as executable) handles mDNS service discovery and HTTP routing</li>
+                        <li><strong>Bridge Executables:</strong> Pre-built for Windows (.exe), macOS, and Linux - no Python installation required</li>
+                        <li><strong>Port File System:</strong> Temporary file-based communication for dynamic port discovery</li>
                     </ul>
+
+                    <div class="callout callout-info">
+                        <div class="callout-title">Installation</div>
+                        <div class="callout-content">
+                            Both extensions are included in the same <code>vlc_extension</code> folder. Installing one gives you access to both. The shared bridge executable supports both extensions simultaneously, so you can use them interchangeably or even run them at the same time.
+                        </div>
+                    </div>
                 </section>
 
-                <section id="vlc-installation">
-                    <h2>Installation</h2>
+                <section id="vlc-roast-overview">
+                    <h2>VLC Roast Extension</h2>
+                    <p>The Saturn Roast extension brings entertainment to VLC Media Player by providing AI-generated roasts based on your media taste. It analyzes what you're currently watching or listening to and delivers comments about your media choices.</p>
+
+                    <h3>How to Use</h3>
+                    <ol>
+                        <li>Play any media in VLC (music, video, podcast, etc.)</li>
+                        <li>Activate the extension: <strong>View → Extensions → Saturn Roast Extension</strong></li>
+                        <li>Wait for the bridge to connect and discover Saturn services</li>
+                        <li>Select a service and model (or use Auto mode)</li>
+                        <li>Click the <strong>🔥 Roast Me! 🔥</strong> button</li>
+                    </ol>
+
+                    <h3>Example Roasts</h3>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <div class="feature-card-title">For Music</div>
+                            <div class="feature-card-desc">
+                                <em>"Listening to Eminem in 2024? Bold choice. I respect the courage it takes to publicly admit that."</em>
+                            </div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-card-title">For Movies</div>
+                            <div class="feature-card-desc">
+                                <em>"Watching The Room for the fifteenth time? At this point, you're not watching it ironically anymore, are you?"</em>
+                            </div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-card-title">For Podcasts</div>
+                            <div class="feature-card-desc">
+                                <em>"Another 4-hour podcast about cryptocurrency? Your time management skills are as solid as Bitcoin's price stability."</em>
+                            </div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-card-title">For Classical</div>
+                            <div class="feature-card-desc">
+                                <em>"Juice World at 3 AM? Either you're extremely cultured or you fell asleep on your keyboard and this autoplayed."</em>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="vlc-roast-installation">
+                    <h2>Installation - Roast Extension</h2>
+                    <p>The Roast extension shares the same installation process as the Chat extension. Both extensions are included in the <code>vlc_extension</code> folder and use the same discovery bridge.</p>
+
+                    <h3>Quick Install</h3>
+                    <ol class="steps-list">
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Download</div>
+                                <div class="step-desc">Get the <code>vlc_extension</code> folder from the Saturn repository: <a href="https://github.com/jperrello/Zeroconf-AI/tree/main/vlc_extension" target="_blank">VLC Extension Repository</a></div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Copy to VLC</div>
+                                <div class="step-desc">
+                                    Copy the entire folder to your VLC extensions directory:<br><br>
+                                    <strong>Windows:</strong> <code>%APPDATA%\vlc\lua\extensions\</code><br>
+                                    <strong>macOS:</strong> <code>~/Library/Application Support/org.videolan.vlc/lua/extensions/</code><br>
+                                    <strong>Linux:</strong> <code>~/.local/share/vlc/lua/extensions/</code>
+                                </div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Restart VLC</div>
+                                <div class="step-desc">Restart VLC to load the extension</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Activate</div>
+                                <div class="step-desc">Go to <strong>View → Extensions → Saturn Roast Extension</strong></div>
+                            </div>
+                        </li>
+                    </ol>
+
+                    <div class="callout callout-info">
+                        <div class="callout-title">Shared Installation</div>
+                        <div class="callout-content">
+                            Installing the VLC extension folder provides both the Roast and Chat extensions. You don't need separate installations. Both extensions will appear in View → Extensions and can be used interchangeably.
+                        </div>
+                    </div>
+                </section>
+
+                <section id="vlc-roast-examples">
+                    <h2>Using the Roast Extension</h2>
+
+                    <h3>Getting Roasted</h3>
+                    <ol>
+                        <li>Make sure media is playing in VLC</li>
+                        <li>Select a service and model (or leave on Auto)</li>
+                        <li>Click <strong>🔥 Roast Me! 🔥</strong></li>
+                        <li>Watch the "Thinking..." message appear</li>
+                        <li>Enjoy your roast in the styled verdict display</li>
+                    </ol>
+
+                    <h3>Tips for Better Roasts</h3>
+                    <ul>
+                        <li><strong>Metadata Matters:</strong> Media with complete metadata (artist, album, genre) generates more personalized roasts</li>
+                        <li><strong>Try Different Models:</strong> Different AI models have different comedy styles - experiment to find your favorite</li>
+                        <li><strong>Context is Key:</strong> The AI sees what you're playing, so the more interesting your media choice, the funnier the roast</li>
+                        <li><strong>Embrace the Chaos:</strong> Play something unusual or embarrassing for the best results</li>
+                    </ul>
+
+                    <div class="callout callout-tip">
+                        <div class="callout-title">Multiple Roasts</div>
+                        <div class="callout-content">
+                            Click the roast button multiple times to get different takes on the same media. Each request generates a fresh roast, so you can compare different AI personalities and roasting styles.
+                        </div>
+                    </div>
+                </section>
+
+                <section id="vlc-chat-overview">
+                    <h2>VLC Chat Extension</h2>
+                    <p>The Saturn Chat extension provides an interactive conversational AI assistant directly within VLC Media Player. Unlike the entertainment-focused Roast extension, Chat is designed for productive, informative interactions about your media content. The AI assistant is aware of what you're watching or listening to and can answer questions, provide context, and help you understand your media better.</p>
+
+                    <h3>What Makes It Special</h3>
+                    <ul>
+                        <li><strong>Context-Aware Conversations:</strong> The AI knows what you're playing and can reference it in responses</li>
+                        <li><strong>Full Chat History:</strong> Maintains conversation history with color-coded messages for easy reading</li>
+                        <li><strong>Educational & Informative:</strong> Perfect for learning about music, films, podcasts, or educational content</li>
+                        <li><strong>Multi-turn Discussions:</strong> Build on previous messages to have natural, flowing conversations</li>
+                        <li><strong>Playback Position Tracking:</strong> Records when conversations started for temporal context</li>
+                        <li><strong>Flexible System Prompt:</strong> Configured to be helpful and focused on media intelligence</li>
+                    </ul>
+
+                    <h3>How to Use</h3>
+                    <ol>
+                        <li>Play any media in VLC (music, video, podcast, educational content, etc.)</li>
+                        <li>Activate the extension: <strong>View → Extensions → Saturn VLC Extension</strong></li>
+                        <li>Wait for the "Saturn Chat - Media Intelligence" window to appear and connect</li>
+                        <li>Select a service and model (or use Auto mode for automatic routing)</li>
+                        <li>Type your question or comment in the message input</li>
+                        <li>Click <strong>Send</strong> and watch the AI respond with context-aware information</li>
+                    </ol>
+
+                    <div class="callout callout-info">
+                        <div class="callout-title">Shared Architecture</div>
+                        <div class="callout-content">
+                            Both VLC extensions (Chat and Roast) use the same discovery bridge and installation process. See the <a href="#vlc-extensions-architecture">Shared Architecture section</a> above for technical details on how the bridge works.
+                        </div>
+                    </div>
+                </section>
+
+                <section id="vlc-chat-installation">
+                    <h2>Installation - Chat Extension</h2>
 
                     <h3>What's Included</h3>
                     <p>The VLC extension comes bundled with everything needed and no additional software installation required:</p>
@@ -2445,51 +3742,6 @@ except: pass
                         </li>
                     </ol>
 
-                    <h3>The Chat Interface</h3>
-                    <p>The extension window contains:</p>
-
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Element</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Bridge Configuration</td>
-                                <td>URL input field with Save button (defaults to http://127.0.0.1:9876)</td>
-                            </tr>
-                            <tr>
-                                <td>Service Status</td>
-                                <td>Shows connection status and number of available services</td>
-                            </tr>
-                            <tr>
-                                <td>Available Services</td>
-                                <td>Dropdown with Refresh and Select buttons. "Auto (Best Available)" selects by priority</td>
-                            </tr>
-                            <tr>
-                                <td>Model Selection</td>
-                                <td>Dropdown showing available models for the selected service with Select button</td>
-                            </tr>
-                            <tr>
-                                <td>Media Context</td>
-                                <td>Shows title, current position/duration, artist, and album of playing media</td>
-                            </tr>
-                            <tr>
-                                <td>Chat History</td>
-                                <td>HTML-formatted conversation with color-coded messages (blue for user, green for AI)</td>
-                            </tr>
-                            <tr>
-                                <td>Message Input</td>
-                                <td>Text input field with Send button</td>
-                            </tr>
-                            <tr>
-                                <td>Debug Label</td>
-                                <td>Shows current operation status for troubleshooting</td>
-                            </tr>
-                        </tbody>
-                    </table>
 
                     <h3>Starting a Conversation</h3>
                     <ol>
@@ -2509,44 +3761,6 @@ except: pass
                     <p>Close the extension window or select <strong>View → Extensions → Saturn VLC Extension</strong> again. The extension sends a POST request to the bridge's <code>/shutdown</code> endpoint and cleans up the port file from the temp directory.</p>
                 </section>
 
-                <section id="vlc-examples">
-                    <h2>Example Queries</h2>
-
-                    <div class="feature-grid">
-                        <div class="feature-card">
-                            <div class="feature-card-title">Music Metadata</div>
-                            <div class="feature-card-desc">
-                                "Who composed this piece?"<br>
-                                "What album is this track from?"<br>
-                                "List similar artists in this genre"
-                            </div>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-card-title">Video Information</div>
-                            <div class="feature-card-desc">
-                                "Who directed this film?"<br>
-                                "What is the release year?"<br>
-                                "List other works by this director"
-                            </div>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-card-title">Podcast Analysis</div>
-                            <div class="feature-card-desc">
-                                "Summarize the discussion so far"<br>
-                                "What were the key points on that topic?"<br>
-                                "Identify the guest speaker"
-                            </div>
-                        </div>
-                        <div class="feature-card">
-                            <div class="feature-card-title">Educational Content</div>
-                            <div class="feature-card-desc">
-                                "Clarify that concept"<br>
-                                "Generate review questions"<br>
-                                "List prerequisite topics"
-                            </div>
-                        </div>
-                    </div>
-                </section>
 
                 <section id="vlc-troubleshooting">
                     <h2>Troubleshooting</h2>
@@ -2665,8 +3879,679 @@ cd ~/.local/share/vlc/lua/extensions/vlc_extension/bridge/
                         </div>
                     </details>
                 </section>
+
+                <!-- Jan AI Client Integration -->
+                <section id="jan-overview">
+                    <h2>Jan AI Client Integration</h2>
+                    <p>Jan is an open-source desktop application that provides a privacy-focused alternative to ChatGPT. It allows users to download and run large language models entirely offline on their local machines, while also supporting cloud integrations with providers like OpenAI and Anthropic. Saturn integrates with Jan through the local proxy client, turning Jan's polished interface into a front-end for all Saturn services discovered on your network.</p>
+
+                    <h3>Why Use Jan with Saturn?</h3>
+                    <ul>
+                        <li><strong>Unified Interface:</strong> Access all Saturn network services through Jan's clean, user-friendly chat interface</li>
+                        <li><strong>Automatic Discovery:</strong> No need to manually configure connection endpoints - Saturn handles service discovery</li>
+                        <li><strong>Flexible Routing:</strong> Saturn automatically routes requests to the best available service based on priority</li>
+                        <li><strong>Failover Support:</strong> If one Saturn service goes down, requests seamlessly route to backup services</li>
+                        <li><strong>Model Aggregation:</strong> See all models from all Saturn services in one unified list</li>
+                        <li><strong>Privacy First:</strong> Keep your AI conversations on your local network while enjoying Jan's excellent UX</li>
+                    </ul>
+
+                    <div class="diagram">
+                        <div class="diagram-title">Jan Integration Architecture</div>
+                        <div class="diagram-content">
+                            <div class="diagram-box diagram-box-dark">
+                                Jan Desktop App
+                                <small>User interface</small>
+                            </div>
+                            <div class="diagram-connector-bidirectional"></div>
+                            <div class="diagram-box diagram-box-primary">
+                                Local Proxy Client
+                                <small>OpenAI-compatible endpoint</small>
+                            </div>
+                            <div class="diagram-connector-bidirectional"></div>
+                            <div class="diagram-box diagram-box-success">
+                                Saturn Services
+                                <small>Discovered via mDNS</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="callout callout-info">
+                        <div class="callout-title">About Jan</div>
+                        <div class="callout-content">
+                            Jan is a free, open-source ChatGPT alternative that runs completely offline. While Jan can download and run models locally, it also supports connecting to remote OpenAI-compatible endpoints - which is exactly what Saturn's local proxy provides. Learn more at <a href="https://jan.ai" target="_blank">jan.ai</a>.
+                        </div>
+                    </div>
+                </section>
+
+                <section id="jan-setup">
+                    <h2>Setting Up Jan with Saturn</h2>
+
+                    <h3>Prerequisites</h3>
+                    <ul>
+                        <li>At least one Saturn server running on your network (OpenRouter or Ollama)</li>
+                        <li>Jan desktop application installed on your computer</li>
+                        <li>Python 3.7+ installed for running the local proxy client</li>
+                    </ul>
+
+                    <h3>Installation Steps</h3>
+                    <ol class="steps-list">
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Download Jan</div>
+                                <div class="step-desc">Visit <a href="https://jan.ai" target="_blank">jan.ai</a> and download the desktop application for your platform (Windows, macOS, or Linux). Install and launch Jan.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Start a Saturn Server</div>
+                                <div class="step-desc">If you haven't already, start at least one Saturn server on your network. For example:
+                                    <div class="code-block" style="margin-top: 0.5rem;">
+                                        <div class="code-content">
+<pre><span class="keyword">cd</span> servers/
+<span class="keyword">python</span> openrouter_server.py</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Start the Local Proxy Client</div>
+                                <div class="step-desc">The local proxy client discovers Saturn services and exposes them via an OpenAI-compatible API:
+                                    <div class="code-block" style="margin-top: 0.5rem;">
+                                        <div class="code-content">
+<pre><span class="keyword">cd</span> clients/
+<span class="keyword">python</span> local_proxy_client.py</pre>
+                                        </div>
+                                    </div>
+                                    The proxy will start on <code>http://127.0.0.1:8080</code> by default and begin discovering Saturn services.
+                                </div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Configure Jan</div>
+                                <div class="step-desc">In Jan, you need to add Saturn as a remote endpoint:
+                                    <ol style="margin-top: 0.5rem;">
+                                        <li>Open Jan and go to <strong>Settings</strong> (gear icon in top-right)</li>
+                                        <li>Navigate to <strong>Model Providers</strong> or <strong>Remote Models</strong> section</li>
+                                        <li>Add a new <strong>OpenAI-Compatible</strong> endpoint</li>
+                                        <li>Set the <strong>Base URL</strong> to: <code>http://127.0.0.1:8080/v1</code></li>
+                                        <li>Leave the <strong>API Key</strong> field empty or enter any placeholder text (not required)</li>
+                                        <li>Save the configuration</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </li>
+                    </ol>
+                </section>
+
+                <section id="jan-configuration">
+                    <h2>Using Jan with Saturn</h2>
+
+                    <h3>Selecting Models</h3>
+                    <p>Once configured, Jan will show all models available from all Saturn services on your network. The local proxy aggregates models from every discovered Saturn server, presenting them as a unified list.</p>
+
+                    <ol>
+                        <li>In Jan's main interface, look for the model selector (usually in the top bar or sidebar)</li>
+                        <li>You should see models from all your Saturn services listed together</li>
+                        <li>Select any model to start chatting</li>
+                        <li>Jan will send requests through the Saturn local proxy, which routes them to the appropriate service</li>
+                    </ol>
+
+                    <h3>How Routing Works</h3>
+                    <p>When you send a message in Jan:</p>
+                    <ol class="steps-list">
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Request Sent to Proxy</div>
+                                <div class="step-desc">Jan sends your chat request to the local proxy at <code>http://127.0.0.1:8080/v1</code></div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Service Discovery</div>
+                                <div class="step-desc">The proxy identifies which Saturn service hosts the selected model</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Request Forwarding</div>
+                                <div class="step-desc">The proxy forwards your request to the appropriate Saturn service</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Response Return</div>
+                                <div class="step-desc">The AI response flows back through the proxy to Jan's interface</div>
+                            </div>
+                        </li>
+                    </ol>
+
+                    <h3>Verifying the Integration</h3>
+                    <p>To confirm Jan is successfully connected to Saturn:</p>
+                    <ul>
+                        <li><strong>Check Models:</strong> You should see models from your Saturn services in Jan's model list</li>
+                        <li><strong>Check Proxy Logs:</strong> The local proxy client logs all incoming requests and service routing</li>
+                        <li><strong>Send Test Message:</strong> Try chatting with a Saturn-provided model and verify you get responses</li>
+                    </ul>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Example Proxy Log Output</span>
+                        </div>
+                        <div class="code-content">
+<pre>[INFO] Local proxy starting on http://127.0.0.1:8080
+[INFO] Discovered service: OpenRouter at http://192.168.1.100:8000 (priority=50)
+[INFO] Available models: gpt-4, claude-3-opus, llama-3-70b
+[INFO] Routing request for model 'gpt-4' to OpenRouter service
+[INFO] Request completed successfully</pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="jan-benefits">
+                    <h2>Benefits of This Integration</h2>
+
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <div class="feature-card-title">Best of Both Worlds</div>
+                            <div class="feature-card-desc">
+                                Combine Jan's excellent user interface with Saturn's automatic service discovery and failover capabilities. You get a polished desktop app experience with enterprise-grade service management.
+                            </div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-card-title">Zero Configuration Changes</div>
+                            <div class="feature-card-desc">
+                                Add or remove Saturn services without reconfiguring Jan. The local proxy automatically discovers new services and updates the available model list.
+                            </div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-card-title">Automatic Failover</div>
+                            <div class="feature-card-desc">
+                                If a Saturn service becomes unavailable, the proxy can route requests to backup services (if configured). Your Jan conversations continue without interruption.
+                            </div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-card-title">Network-Wide Access</div>
+                            <div class="feature-card-desc">
+                                Set up Saturn servers once for your entire network. Every device running Jan with the local proxy can access all AI services without individual configuration.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="callout callout-tip">
+                        <div class="callout-title">Use Case: Family Network</div>
+                        <div class="callout-content">
+                            Run a Saturn OpenRouter server on your home network. Every family member can install Jan on their laptop, start the local proxy, and immediately access the same AI models without each person needing their own API keys or configuration. Add a local Ollama server later, and everyone automatically gets access to those models too.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Open WebUI Integration -->
+                <section id="owui-overview">
+                    <h2>Open WebUI Integration</h2>
+                    <p>Open WebUI is a self-hosted, feature-rich web interface for AI chat that supports multiple model providers through extensible functions (similar to plugins). Saturn integrates with Open WebUI through a custom function that uses DNS-SD service discovery to automatically find and connect to AI services on your local network.</p>
+
+                    <h3>Why Use Open WebUI with Saturn?</h3>
+                    <ul>
+                        <li><strong>Modern Web Interface:</strong> Access Saturn services through Open WebUI's responsive, browser-based chat interface</li>
+                        <li><strong>Zero-Configuration Discovery:</strong> The Saturn function automatically discovers all network services without manual endpoint configuration</li>
+                        <li><strong>Model Aggregation:</strong> See all models from all Saturn services in a single unified list</li>
+                        <li><strong>Automatic Failover:</strong> Built-in support for failing over to backup services when primary services are unavailable</li>
+                        <li><strong>Flexible Deployment:</strong> Run as a desktop app or self-hosted web server</li>
+                        <li><strong>Streaming Support:</strong> Full support for streaming responses with real-time token generation</li>
+                    </ul>
+
+                
+
+                    <div class="callout callout-info">
+                        <div class="callout-title">About Open WebUI</div>
+                        <div class="callout-content">
+                            Open WebUI is an extensible, feature-rich web interface for chatting with AI models. It supports custom functions that can dynamically provide models from various sources. Learn more at <a href="https://github.com/open-webui/open-webui" target="_blank">github.com/open-webui/open-webui</a>.
+                        </div>
+                    </div>
+                </section>
+
+                <section id="owui-setup">
+                    <h2>Installation Options</h2>
+                    <p>Open WebUI can be installed in two ways. Both support the Saturn function integration - choose based on your deployment preference.</p>
+
+                    <h3>Option 1: Desktop Application (Recommended for Personal Use)</h3>
+                    <p>The desktop app provides a standalone application with built-in server, ideal for individual users.</p>
+
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <div class="feature-card-title">Easy Installation</div>
+                            <div class="feature-card-desc">
+                                Simple installer for Windows, macOS, and Linux. No command-line configuration required.
+                            </div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-card-title">Self-Contained</div>
+                            <div class="feature-card-desc">
+                                All dependencies bundled - just download, install, and run. No Docker or server management needed.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin: 2rem 0; padding: 2rem; background: rgb(var(--gray-900)); border: 1px solid rgb(var(--gray-800)); border-radius: 0.75rem; text-align: center;">
+                        <a href="https://github.com/open-webui/desktop" target="_blank" class="btn btn-large">Download Desktop App</a>
+                    </div>
+
+                    <h3>Option 2: Server Installation (Recommended for Network Sharing)</h3>
+                    <p>The server installation runs as a web application, allowing multiple users to access Open WebUI from their browsers.</p>
+
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <div class="feature-card-title">Multi-User Access</div>
+                            <div class="feature-card-desc">
+                                Host on a network server and allow multiple users to access via web browser from any device.
+                            </div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-card-title">Docker Support</div>
+                            <div class="feature-card-desc">
+                                Easy deployment with Docker containers, or traditional server installation options available.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin: 2rem 0; padding: 2rem; background: rgb(var(--gray-900)); border: 1px solid rgb(var(--gray-800)); border-radius: 0.75rem; text-align: center;">
+                        <a href="https://github.com/open-webui/open-webui" target="_blank" class="btn btn-large">View Server Installation</a>
+                    </div>
+
+                    <div class="callout callout-tip">
+                        <div class="callout-title">Which Should I Choose?</div>
+                        <div class="callout-content">
+                            <p><strong>Choose Desktop App if:</strong></p>
+                            <ul>
+                                <li>You want the simplest installation experience</li>
+                                <li>You're the only user who will access Open WebUI</li>
+                                <li>You prefer a native application over a web interface</li>
+                            </ul>
+                            <p><strong>Choose Server Installation if:</strong></p>
+                            <ul>
+                                <li>You want multiple users to access the same instance</li>
+                                <li>You have a home server or NAS for hosting applications</li>
+                                <li>You prefer Docker-based deployments</li>
+                                <li>You want to access Open WebUI from multiple devices</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="owui-function-setup">
+                    <h2>Installing the Saturn Function</h2>
+                    <p>Once you have Open WebUI installed (either desktop or server), you need to add the Saturn function to enable service discovery.</p>
+
+                    <h3>Prerequisites</h3>
+                    <ul>
+                        <li>Open WebUI desktop app or server installed and running</li>
+                        <li>At least one Saturn server running on your network</li>
+                        <li>Administrator access to Open WebUI settings</li>
+                    </ul>
+
+                    <h3>Method 1: Discover from Community (Recommended)</h3>
+                    <ol class="steps-list">
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Open Function Settings</div>
+                                <div class="step-desc">Click your <strong>Name/Avatar</strong> in the top-right corner, then navigate to <strong>Settings → Admin Settings → Functions</strong>.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Discover Function</div>
+                                <div class="step-desc">Select <strong>Discover a Function</strong> at the bottom of the page.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Search for Saturn</div>
+                                <div class="step-desc">In the search box, type <code>Saturn</code>. The Saturn function should appear in the results.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Install Function</div>
+                                <div class="step-desc">Click on the Saturn function result and follow the prompts to install it.</div>
+                            </div>
+                        </li>
+                    </ol>
+
+                    <h3>Method 2: Manual Installation (If Discovery Doesn't Work)</h3>
+                    <p>If the function doesn't appear in search results, you can manually install it by copying the source code:</p>
+
+                    <ol class="steps-list">
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Copy Source Code</div>
+                                <div class="step-desc">Open <code>owui_saturn.py</code> from the repository root directory and copy all of its contents.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Create New Function</div>
+                                <div class="step-desc">In Open WebUI, go to <strong>Settings → Admin Settings → Functions</strong>, click the <strong>+ (plus icon)</strong> button, and select <strong>Create New Function</strong>.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Paste Code</div>
+                                <div class="step-desc">Delete any template code and paste the entire contents of <code>owui_saturn.py</code> into the code editor.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Save Function</div>
+                                <div class="step-desc">Click <strong>Save</strong> to create the function. Open WebUI will validate the code and add it to your functions list.</div>
+                            </div>
+                        </li>
+                    </ol>
+
+                    <div class="callout callout-warning">
+                        <div class="callout-title">Windows Requirement</div>
+                        <div class="callout-content">
+                            The Saturn function uses the <code>dns-sd</code> command for service discovery. On Windows, this requires Bonjour Print Services to be installed. If you don't have it, you can download it from Apple's website or install iTunes (which includes Bonjour). On macOS and Linux, the necessary tools are typically pre-installed.
+                        </div>
+                    </div>
+                </section>
+
+                <section id="owui-usage">
+                    <h2>Using Saturn with Open WebUI</h2>
+
+                    <h3>Enabling the Function</h3>
+                    <ol>
+                        <li>Ensure at least one Saturn server is running on your network</li>
+                        <li>In Open WebUI, go to <strong>Settings → Admin Settings → Functions</strong></li>
+                        <li>Find the Saturn function in the list</li>
+                        <li>Toggle it to <strong>Enabled</strong></li>
+                        <li>Refresh Open WebUI (F5 or reload the page)</li>
+                    </ol>
+
+                    <h3>Selecting Saturn Models</h3>
+                    <p>Once enabled, Saturn models will appear in Open WebUI's model selector:</p>
+
+                    <ol class="steps-list">
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Open Model Selector</div>
+                                <div class="step-desc">In the chat interface, click the model dropdown (usually at the top of the page).</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Find Saturn Models</div>
+                                <div class="step-desc">Saturn models are prefixed with <code>SATURN/</code> followed by the service name and model ID. For example: <code>SATURN/OpenRouter:anthropic/claude-3-opus</code>.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Select and Chat</div>
+                                <div class="step-desc">Select any Saturn model and start chatting. The function automatically routes your requests to the appropriate Saturn service.</div>
+                            </div>
+                        </li>
+                    </ol>
+
+                    <h3>Configuring Function Settings</h3>
+                    <p>The Saturn function includes configurable "valves" (settings) that you can adjust:</p>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Setting</th>
+                                <th>Default</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>NAME_PREFIX</code></td>
+                                <td>"SATURN/"</td>
+                                <td>Prefix added to model names for identification</td>
+                            </tr>
+                            <tr>
+                                <td><code>DISCOVERY_TIMEOUT</code></td>
+                                <td>2.0 seconds</td>
+                                <td>How long to wait when discovering services</td>
+                            </tr>
+                            <tr>
+                                <td><code>ENABLE_FAILOVER</code></td>
+                                <td>true</td>
+                                <td>Automatically fail over to backup services if primary fails</td>
+                            </tr>
+                            <tr>
+                                <td><code>CACHE_TTL</code></td>
+                                <td>60 seconds</td>
+                                <td>How long to cache discovered services before re-scanning</td>
+                            </tr>
+                            <tr>
+                                <td><code>REQUEST_TIMEOUT</code></td>
+                                <td>120 seconds</td>
+                                <td>Maximum time to wait for AI service responses</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <p>To adjust these settings:</p>
+                    <ol>
+                        <li>Go to <strong>Settings → Admin Settings → Functions</strong></li>
+                        <li>Click on the Saturn function</li>
+                        <li>Look for the "Valves" section</li>
+                        <li>Adjust values as needed and save</li>
+                    </ol>
+
+                    <h3>How Failover Works</h3>
+                    <p>If you have multiple Saturn services offering the same model, the function provides automatic failover:</p>
+
+                    <ol class="steps-list">
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Primary Service Selection</div>
+                                <div class="step-desc">The function selects the service with the lowest priority number for each model.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Request Attempt</div>
+                                <div class="step-desc">Your chat request is sent to the primary service.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Automatic Failover</div>
+                                <div class="step-desc">If the primary service fails, the function automatically tries the next service offering that model.</div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-content">
+                                <div class="step-title">Transparent Recovery</div>
+                                <div class="step-desc">Failover happens automatically - you'll receive your response without knowing a backup was used.</div>
+                            </div>
+                        </li>
+                    </ol>
+
+                    <div class="callout callout-tip">
+                        <div class="callout-title">No Services Found?</div>
+                        <div class="callout-content">
+                            If you see a model named "No Saturn services discovered...", this means the function couldn't find any Saturn servers on your network. Make sure:
+                            <ul>
+                                <li>At least one Saturn server is running</li>
+                                <li>The Saturn server has completed initialization</li>
+                                <li>Your firewall allows mDNS traffic (UDP port 5353)</li>
+                                <li>You're on the same network as the Saturn server</li>
+                            </ul>
+                            After starting a Saturn server, refresh Open WebUI to trigger a new discovery scan.
+                        </div>
+                    </div>
+
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <div class="feature-card-title">Service Caching</div>
+                            <div class="feature-card-desc">
+                                Discovered services are cached for 60 seconds by default to reduce network traffic. This means new services may take up to a minute to appear after they start.
+                            </div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-card-title">Model Naming</div>
+                            <div class="feature-card-desc">
+                                Models are named with the pattern <code>SATURN/[ServiceName]:[ModelID]</code>. This format helps identify which service provides each model and enables proper request routing.
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="integrations-troubleshooting">
+                    <h2>Integration Troubleshooting</h2>
+
+                    <details>
+                        <summary>Jan can't see any models from Saturn</summary>
+                        <div>
+                            <p><strong>Symptoms:</strong> Jan shows no models or only local models</p>
+                            <p><strong>Solutions:</strong></p>
+                            <ul>
+                                <li>Verify the local proxy is running: Check for "Local proxy starting" log message</li>
+                                <li>Confirm Saturn services are discovered: Check proxy logs for "Discovered service" messages</li>
+                                <li>Verify Jan's configuration: Ensure Base URL is exactly <code>http://127.0.0.1:8080/v1</code></li>
+                                <li>Test the proxy directly: Visit <code>http://127.0.0.1:8080/v1/models</code> in a browser to see the model list</li>
+                                <li>Restart Jan after changing configuration</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details>
+                        <summary>Messages fail or timeout in Jan</summary>
+                        <div>
+                            <p><strong>Symptoms:</strong> Chat requests hang, timeout, or return errors</p>
+                            <p><strong>Solutions:</strong></p>
+                            <ul>
+                                <li>Check proxy logs for error messages about service routing</li>
+                                <li>Verify the Saturn service is healthy: <code>curl http://&lt;service&gt;:&lt;port&gt;/v1/health</code></li>
+                                <li>Ensure the selected model is actually available on the Saturn service</li>
+                                <li>Check firewall settings aren't blocking communication between Jan, the proxy, and Saturn services</li>
+                                <li>Try a different model to isolate whether it's model-specific or service-wide</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details>
+                        <summary>Models appear multiple times</summary>
+                        <div>
+                            <p><strong>Symptoms:</strong> Same model name appears multiple times in Jan's model list</p>
+                            <p><strong>Explanation:</strong> This is expected behavior when multiple Saturn services offer the same model</p>
+                            <p><strong>Details:</strong> If you have both an OpenRouter server and an Ollama server, and both offer "llama-3-8b", you'll see it twice. The proxy distinguishes them internally by service, but Jan may show them with the same display name. Choose either - Saturn will route to the appropriate service.</p>
+                        </div>
+                    </details>
+
+                    <details>
+                        <summary>Open WebUI shows "No Saturn services discovered"</summary>
+                        <div>
+                            <p><strong>Symptoms:</strong> The only model available is named "No Saturn services discovered..."</p>
+                            <p><strong>Solutions:</strong></p>
+                            <ul>
+                                <li>Verify at least one Saturn server is running: Check the server terminal for "Service registered" messages</li>
+                                <li>Ensure the Saturn function is enabled in Open WebUI</li>
+                                <li>Check that <code>dns-sd</code> command is available (Windows requires Bonjour Print Services)</li>
+                                <li>Verify firewall allows mDNS traffic on UDP port 5353</li>
+                                <li>Refresh Open WebUI (F5) to trigger a new service discovery scan</li>
+                                <li>Check function settings and increase <code>DISCOVERY_TIMEOUT</code> if on a slow network</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details>
+                        <summary>Open WebUI function fails with DNS-SD error</summary>
+                        <div>
+                            <p><strong>Symptoms:</strong> Error messages about <code>dns-sd</code> command not found or failing to execute</p>
+                            <p><strong>Solutions:</strong></p>
+                            <ul>
+                                <li><strong>Windows:</strong> Install Bonjour Print Services from Apple or install iTunes (includes Bonjour)</li>
+                                <li><strong>macOS:</strong> <code>dns-sd</code> is built-in, no installation needed. If it's missing, reinstall macOS</li>
+                                <li><strong>Linux:</strong> Install Avahi tools: <code>sudo apt install avahi-utils</code> (Ubuntu/Debian) or <code>sudo yum install avahi-tools</code> (RHEL/CentOS)</li>
+                                <li>Test the command manually in terminal: <code>dns-sd -B _saturn._tcp local</code></li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details>
+                        <summary>Saturn models not appearing in Open WebUI</summary>
+                        <div>
+                            <p><strong>Symptoms:</strong> Function is enabled but no SATURN/ models appear in model selector</p>
+                            <p><strong>Solutions:</strong></p>
+                            <ul>
+                                <li>Check that the function is actually enabled: Go to Admin Settings → Functions and verify toggle is on</li>
+                                <li>Refresh the page after enabling the function (F5 or hard refresh)</li>
+                                <li>Check function logs in Open WebUI for error messages</li>
+                                <li>Verify Saturn services have models available: Visit <code>http://[saturn-service]:port/v1/models</code> in browser</li>
+                                <li>Wait up to 60 seconds for service cache to refresh</li>
+                                <li>Try disabling and re-enabling the function</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <details>
+                        <summary>Chat requests fail in Open WebUI</summary>
+                        <div>
+                            <p><strong>Symptoms:</strong> Models appear but chat requests timeout or return errors</p>
+                            <p><strong>Solutions:</strong></p>
+                            <ul>
+                                <li>Check Open WebUI function logs for detailed error messages</li>
+                                <li>Verify the Saturn service is healthy: <code>curl http://[service]:[port]/v1/health</code></li>
+                                <li>Increase <code>REQUEST_TIMEOUT</code> in function valves settings if using slow models</li>
+                                <li>Ensure network connectivity between Open WebUI server and Saturn services</li>
+                                <li>Check firewall isn't blocking HTTP traffic between Open WebUI and Saturn services</li>
+                                <li>Try a different model to isolate whether it's model-specific or service-wide</li>
+                            </ul>
+                        </div>
+                    </details>
+                </section>
             </section>
         </main>
+    </div>
+
+    <!-- Submit Integration Modal -->
+    <div class="modal-overlay" id="submit-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Submit Your Integration</h2>
+                <button class="modal-close" onclick="closeSubmitModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6L6 18M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form id="submit-form" onsubmit="handleSubmitForm(event)">
+                <div class="modal-body" id="form-content">
+                    <div class="form-group">
+                        <label class="form-label" for="integration-name">Integration Name</label>
+                        <input type="text" class="form-input" id="integration-name" name="name" placeholder="e.g., Obsidian Plugin, VS Code Extension" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="integration-description">Short Description</label>
+                        <textarea class="form-textarea" id="integration-description" name="description" placeholder="Describe what your integration does in 2-3 sentences..." required></textarea>
+                        <p class="form-hint">What problem does it solve? What makes it useful?</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="integration-url">GitHub Repo or Documentation URL</label>
+                        <input type="url" class="form-input" id="integration-url" name="url" placeholder="https://github.com/username/repo" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="integration-contact">Your Contact</label>
+                        <input type="text" class="form-input" id="integration-contact" name="contact" placeholder="Email or GitHub username" required>
+                        <p class="form-hint">So we can reach you if we have questions</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="integration-screenshot">Screenshot/Logo URL <span class="form-label-optional">(optional)</span></label>
+                        <input type="url" class="form-input" id="integration-screenshot" name="screenshot" placeholder="https://example.com/screenshot.png">
+                    </div>
+                </div>
+                <div class="modal-footer" id="form-footer">
+                    <button type="button" class="btn-secondary" onclick="closeSubmitModal()">Cancel</button>
+                    <button type="submit" class="btn-primary" id="submit-btn">Submit Integration</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
@@ -3236,6 +5121,130 @@ cd ~/.local/share/vlc/lua/extensions/vlc_extension/bridge/
         // Attach copy page handlers
         document.querySelectorAll('.copy-page-btn').forEach(btn => {
             btn.addEventListener('click', () => copyPageAsMarkdown(btn));
+        });
+
+        // ===== SUBMIT INTEGRATION MODAL =====
+
+        const submitModal = document.getElementById('submit-modal');
+        const submitForm = document.getElementById('submit-form');
+        const formContent = document.getElementById('form-content');
+        const formFooter = document.getElementById('form-footer');
+
+        function openSubmitModal() {
+            submitModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            // Focus first input
+            setTimeout(() => {
+                document.getElementById('integration-name').focus();
+            }, 100);
+        }
+
+        function closeSubmitModal() {
+            submitModal.classList.remove('active');
+            document.body.style.overflow = '';
+            // Reset form after animation
+            setTimeout(() => {
+                resetSubmitForm();
+            }, 200);
+        }
+
+        function resetSubmitForm() {
+            submitForm.reset();
+            formContent.innerHTML = `
+                <div class="form-group">
+                    <label class="form-label" for="integration-name">Integration Name</label>
+                    <input type="text" class="form-input" id="integration-name" name="name" placeholder="e.g., Obsidian Plugin, VS Code Extension" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="integration-description">Short Description</label>
+                    <textarea class="form-textarea" id="integration-description" name="description" placeholder="Describe what your integration does in 2-3 sentences..." required></textarea>
+                    <p class="form-hint">What problem does it solve? What makes it useful?</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="integration-url">GitHub Repo or Documentation URL</label>
+                    <input type="url" class="form-input" id="integration-url" name="url" placeholder="https://github.com/username/repo" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="integration-contact">Your Contact</label>
+                    <input type="text" class="form-input" id="integration-contact" name="contact" placeholder="Email or GitHub username" required>
+                    <p class="form-hint">So we can reach you if we have questions</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="integration-screenshot">Screenshot/Logo URL <span class="form-label-optional">(optional)</span></label>
+                    <input type="url" class="form-input" id="integration-screenshot" name="screenshot" placeholder="https://example.com/screenshot.png">
+                </div>
+            `;
+            formFooter.innerHTML = `
+                <button type="button" class="btn-secondary" onclick="closeSubmitModal()">Cancel</button>
+                <button type="submit" class="btn-primary" id="submit-btn">Submit Integration</button>
+            `;
+        }
+
+        function handleSubmitForm(event) {
+            event.preventDefault();
+
+            const formData = new FormData(submitForm);
+            const data = {
+                name: formData.get('name'),
+                description: formData.get('description'),
+                url: formData.get('url'),
+                contact: formData.get('contact'),
+                screenshot: formData.get('screenshot') || ''
+            };
+
+            // Create GitHub issue URL with pre-filled content
+            const issueTitle = encodeURIComponent(`[Integration Submission] ${data.name}`);
+            const issueBody = encodeURIComponent(`## Integration Submission
+
+**Integration Name:** ${data.name}
+
+**Description:**
+${data.description}
+
+**Repository/Documentation URL:** ${data.url}
+
+**Contact:** ${data.contact}
+
+${data.screenshot ? `**Screenshot/Logo URL:** ${data.screenshot}` : ''}
+
+---
+*Submitted via Saturn Documentation*`);
+
+            const githubIssueUrl = `https://github.com/jperrello/Zeroconf-AI/issues/new?title=${issueTitle}&body=${issueBody}&labels=integration-submission`;
+
+            // Show success state
+            formContent.innerHTML = `
+                <div class="form-success">
+                    <div class="form-success-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <h3>Almost There!</h3>
+                    <p>Click the button below to open GitHub and create your submission. You'll be able to review and edit the details before submitting.</p>
+                </div>
+            `;
+
+            formFooter.innerHTML = `
+                <button type="button" class="btn-secondary" onclick="closeSubmitModal()">Cancel</button>
+                <a href="${githubIssueUrl}" target="_blank" class="btn-primary" onclick="setTimeout(closeSubmitModal, 500)">
+                    Open GitHub Issue
+                </a>
+            `;
+        }
+
+        // Close modal on overlay click
+        submitModal.addEventListener('click', (e) => {
+            if (e.target === submitModal) {
+                closeSubmitModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && submitModal.classList.contains('active')) {
+                closeSubmitModal();
+            }
         });
 
     </script>
