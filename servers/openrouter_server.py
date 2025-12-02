@@ -316,15 +316,16 @@ def register_saturn(port: int, priority: int, service_type: str) -> subprocess.P
     host = socket.gethostname()
     service_name = f"OpenRouter"
 
-    # DNS-SD service registration using subprocess
-    txt_records = f"version=2.0 api=OpenRouter features=multimodal,auto-routing,full-catalog priority={actual_priority}"
-
     try:
         registration_proc = subprocess.Popen(
             [
                 'dns-sd', '-R',
                 service_name, '_saturn._tcp', 'local',
-                str(port), txt_records
+                str(port),
+                f'version=2.0',
+                f'api=OpenRouter',
+                f'features=multimodal,auto-routing,full-catalog',
+                f'priority={actual_priority}'
             ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

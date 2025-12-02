@@ -280,22 +280,22 @@ def find_available_priority(desired_priority: int, service_type: str) -> int:
         print(f"Adjusted priority from {desired_priority} to {current_priority}")
 
     return current_priority
-
 def register_saturn(port: int, priority: int, service_type: str) -> subprocess.Popen:
     actual_priority = find_available_priority(priority, service_type)
 
     host = socket.gethostname()
-    service_name = f"Ollama"
-
-    # DNS-SD service registration using subprocess
-    txt_records = f"version=1.0 api=Ollama priority={actual_priority}"
+    service_name = f"OpenRouter"
 
     try:
         registration_proc = subprocess.Popen(
             [
                 'dns-sd', '-R',
                 service_name, '_saturn._tcp', 'local',
-                str(port), txt_records
+                str(port),
+                f'version=2.0',
+                f'api=OpenRouter',
+                f'features=multimodal,auto-routing,full-catalog',
+                f'priority={actual_priority}'
             ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
