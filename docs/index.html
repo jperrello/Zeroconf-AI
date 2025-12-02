@@ -1548,9 +1548,14 @@
                     <a href="#int-overview" class="sidebar-link active">Overview</a>
                 </div>
                 <div class="sidebar-group">
-                    <div class="sidebar-title">Service Discovery</div>
-                    <a href="#int-service-discovery" class="sidebar-link">DNS-SD Protocol</a>
-                    <a href="#int-zeroconf-library" class="sidebar-link">Zeroconf Library</a>
+                    <div class="sidebar-title">Service Discovery (Clients)</div>
+                    <a href="#int-service-discovery" class="sidebar-link">DNS-SD Commands</a>
+                    <a href="#int-discovery-zeroconf" class="sidebar-link">Zeroconf Library</a>
+                </div>
+                <div class="sidebar-group">
+                    <div class="sidebar-title">Service Registration (Servers)</div>
+                    <a href="#int-service-registration" class="sidebar-link">DNS-SD Commands</a>
+                    <a href="#int-registration-zeroconf" class="sidebar-link">Zeroconf Library</a>
                     <a href="#int-service-properties" class="sidebar-link">Service Properties</a>
                 </div>
                 <div class="sidebar-group">
@@ -2059,7 +2064,7 @@ python clients/local_proxy_client.py --host 127.0.0.1 --port 8080</pre>
                         <li><strong>Zeroconf Python Library:</strong> Use the Python <code>zeroconf</code> library for pure-Python implementation. Provides cleaner API but requires installing a dependency. Used by <code>servers/fallback_server.py</code> and <code>clients/file_upload_client.py</code>.</li>
                     </ol>
 
-                    <p>This section focuses on the DNS-SD command-based approach. For the zeroconf library approach, see <a href="#int-zeroconf-library">Discovery with Zeroconf Python Library</a>.</p>
+                    <p>This section focuses on the DNS-SD command-based approach. For the zeroconf library approach, visit the Zeroconf Library section of these docs.</a>.</p>
 
                     <h3>DNS-SD Command Reference</h3>
 
@@ -2512,15 +2517,273 @@ discoverSaturnServices().then(services =&gt; {
                                 <li>These examples demonstrate the core discovery pattern - spawn the command, wait for output, parse results</li>
                                 <li>Production implementations should handle errors more gracefully and support continuous monitoring</li>
                                 <li>On Linux, replace <code>dns-sd</code> commands with <code>avahi-browse</code> and adjust parsing accordingly</li>
-                                <li>Consider implementing service registration (announcing your own services) using <code>dns-sd -R</code> for servers</li>
                             </ul>
                         </div>
                     </div>
                 </section>
 
-                <section id="int-zeroconf-library">
-                    <h2>Discovery with Zeroconf Python Library</h2>
-                    <p>As an alternative to subprocess-based DNS-SD commands, you can use the Python <code>zeroconf</code> library for a pure-Python implementation. This approach provides a cleaner API and better event handling but requires installing an additional dependency.</p>
+                <section id="int-service-registration">
+                    <h2>Service Registration</h2>
+                    <p>To make your AI service discoverable on the network, you need to register it using DNS-SD. This announces your service to all devices on the local network so clients can automatically find and connect to it.</p>
+
+                    <h3>Registration with DNS-SD Commands</h3>
+                    <p>The simplest way to register a Saturn service is using the <code>dns-sd -R</code> command. This works on macOS and Windows (with Bonjour installed).</p>
+
+                    <h4>Basic Registration</h4>
+                    <p>Register a service with a single command:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">macOS / Windows</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="comment"># Register a Saturn service</span>
+dns-sd -R "OpenRouter" "_saturn._tcp" "local" 8081 "version=1.0" "api=OpenRouter" "priority=50"</pre>
+                        </div>
+                    </div>
+
+                    <p>This command does the following:</p>
+                    <ul>
+                        <li><code>-R</code>: Register a service</li>
+                        <li><code>"OpenRouter"</code>: Service name (appears to clients)</li>
+                        <li><code>"_saturn._tcp"</code>: Service type (must be exactly this for Saturn)</li>
+                        <li><code>"local"</code>: Domain (always "local" for local network)</li>
+                        <li><code>8081</code>: Port number where your service listens</li>
+                        <li><code>"version=1.0"</code>: Version property in TXT record</li>
+                        <li><code>"api=OpenRouter"</code>: API type property</li>
+                        <li><code>"priority=50"</code>: Priority for service selection</li>
+                    </ul>
+
+                    <div class="callout callout-info">
+                        <div class="callout-title">Keep It Running</div>
+                        <div class="callout-content">
+                            The <code>dns-sd -R</code> command must stay running for your service to remain advertised. If you terminate it, the service disappears from the network. In practice, you'll typically run this as a background process alongside your HTTP server.
+                        </div>
+                    </div>
+
+                    <h4>Registration on Linux (Avahi)</h4>
+                    <p>On Linux systems, use the <code>avahi-publish</code> command instead:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Linux</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="comment"># Register with avahi-publish</span>
+avahi-publish -s "OpenRouter" _saturn._tcp 8081 "version=1.0" "api=OpenRouter" "priority=50"</pre>
+                        </div>
+                    </div>
+
+                    <h3>Registration in Application Code</h3>
+                    <p>For production servers, you'll want to register the service programmatically. Here's how Saturn's servers do it:</p>
+
+                    <h4>Python Implementation (subprocess)</h4>
+                    <p>This example shows the pattern used in <code>servers/openrouter_server.py</code> and <code>servers/ollama_server.py</code>:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">register_service.py</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="keyword">import</span> subprocess
+<span class="keyword">import</span> socket
+
+<span class="keyword">def</span> <span class="function">register_saturn_service</span>(
+    service_name: <span class="type">str</span>,
+    port: <span class="type">int</span>,
+    priority: <span class="type">int</span> = <span class="number">50</span>,
+    api_type: <span class="type">str</span> = <span class="string">"Generic"</span>,
+    version: <span class="type">str</span> = <span class="string">"1.0"</span>,
+    features: <span class="type">str</span> = <span class="keyword">None</span>
+) -> subprocess.Popen:
+    <span class="string">"""
+    Register a Saturn service using dns-sd.
+    Returns the subprocess Popen object - keep it running!
+    """</span>
+
+    <span class="comment"># Build the registration command</span>
+    cmd = [
+        <span class="string">'dns-sd'</span>, <span class="string">'-R'</span>,
+        service_name,
+        <span class="string">'_saturn._tcp'</span>,
+        <span class="string">'local'</span>,
+        str(port),
+        <span class="string">f'version={version}'</span>,
+        <span class="string">f'api={api_type}'</span>,
+        <span class="string">f'priority={priority}'</span>
+    ]
+
+    <span class="comment"># Add optional features</span>
+    <span class="keyword">if</span> features:
+        cmd.append(<span class="string">f'features={features}'</span>)
+
+    <span class="keyword">try</span>:
+        <span class="comment"># Start the registration process</span>
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=<span class="keyword">True</span>
+        )
+
+        print(<span class="string">f"Registered '{service_name}' on port {port} with priority {priority}"</span>)
+        <span class="keyword">return</span> proc
+
+    <span class="keyword">except</span> FileNotFoundError:
+        print(<span class="string">"ERROR: dns-sd not found. Install Bonjour services."</span>)
+        <span class="keyword">return</span> <span class="keyword">None</span>
+
+<span class="comment"># Example usage</span>
+<span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:
+    <span class="comment"># Register the service</span>
+    registration_proc = register_saturn_service(
+        service_name=<span class="string">"MyAIService"</span>,
+        port=<span class="number">8080</span>,
+        priority=<span class="number">10</span>,
+        api_type=<span class="string">"OpenRouter"</span>,
+        features=<span class="string">"multimodal,streaming"</span>
+    )
+
+    <span class="keyword">try</span>:
+        <span class="comment"># Your HTTP server runs here...</span>
+        <span class="comment"># uvicorn.run(app, host="0.0.0.0", port=8080)</span>
+        input(<span class="string">"Press Enter to stop..."</span>)
+    <span class="keyword">finally</span>:
+        <span class="comment"># Clean shutdown</span>
+        <span class="keyword">if</span> registration_proc:
+            print(<span class="string">"Unregistering service..."</span>)
+            registration_proc.terminate()
+            registration_proc.wait(timeout=<span class="number">2</span>)</pre>
+                        </div>
+                    </div>
+
+                    <h4>Shell Script Registration</h4>
+                    <p>For quick testing or scripting, you can register directly from the command line:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">register_and_run.sh</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="comment">#!/bin/bash</span>
+
+<span class="comment"># Register Saturn service in background</span>
+dns-sd -R <span class="string">"MyService"</span> <span class="string">"_saturn._tcp"</span> <span class="string">"local"</span> <span class="number">8080</span> \
+    <span class="string">"version=1.0"</span> \
+    <span class="string">"api=Custom"</span> \
+    <span class="string">"priority=50"</span> &
+
+<span class="comment"># Store the PID so we can kill it later</span>
+DNS_SD_PID=$!
+
+<span class="comment"># Cleanup function</span>
+cleanup() {
+    echo <span class="string">"Unregistering service..."</span>
+    kill $DNS_SD_PID
+    exit <span class="number">0</span>
+}
+
+<span class="comment"># Register cleanup on script exit</span>
+trap cleanup SIGINT SIGTERM
+
+<span class="comment"># Start your HTTP server</span>
+echo <span class="string">"Service registered. Starting server..."</span>
+python -m http.server <span class="number">8080</span></pre>
+                        </div>
+                    </div>
+
+                    <h3>Registration Properties</h3>
+                    <p>When registering your service, include these TXT record properties:</p>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Property</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>version</code></td>
+                                <td>Yes</td>
+                                <td>Your server version</td>
+                                <td><code>"1.0"</code>, <code>"2.0"</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>api</code></td>
+                                <td>Yes</td>
+                                <td>Backend API type</td>
+                                <td><code>"OpenRouter"</code>, <code>"Ollama"</code>, <code>"Custom"</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>priority</code></td>
+                                <td>Yes</td>
+                                <td>Selection priority (lower = preferred)</td>
+                                <td><code>"10"</code>, <code>"50"</code>, <code>"100"</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>features</code></td>
+                                <td>No</td>
+                                <td>Comma-separated capabilities</td>
+                                <td><code>"multimodal,streaming"</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="callout callout-warning">
+                        <div class="callout-title">Service Name Uniqueness</div>
+                        <div class="callout-content">
+                            Each service name must be unique on your network. If two services register with the same name, you may experience conflicts. Consider appending a hostname or random identifier if running multiple instances of the same service type.
+                        </div>
+                    </div>
+
+                    <h3>Testing Your Registration</h3>
+                    <p>After registering your service, verify it's discoverable:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Verify Registration</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="comment"># Browse for all Saturn services</span>
+dns-sd -B _saturn._tcp local
+
+<span class="comment"># You should see your service appear in the output</span>
+<span class="comment"># Example output:</span>
+<span class="comment"># Browsing for _saturn._tcp.local.</span>
+<span class="comment"># Timestamp     A/R Flags if Domain    Service Type    Instance Name</span>
+<span class="comment"># 10:30:00.000  Add     2  4 local.    _saturn._tcp.   MyService</span></pre>
+                        </div>
+                    </div>
+
+                    <p>Then resolve the service to see its details:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Resolve Service Details</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="comment"># Look up your specific service</span>
+dns-sd -L "MyService" _saturn._tcp local
+
+<span class="comment"># You should see the connection details and TXT records:</span>
+<span class="comment"># MyService._saturn._tcp.local. can be reached at hostname.local.:8080</span>
+<span class="comment">#  version=1.0 api=Custom priority=50</span></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="int-discovery-zeroconf">
+                    <h2>Client Discovery with Zeroconf Library</h2>
+                    <p>As an alternative to subprocess-based DNS-SD commands, clients can use the Python <code>zeroconf</code> library for a pure-Python implementation. This approach provides a cleaner API and better event handling but requires installing an additional dependency.</p>
 
                     <h3>When to Use This Approach</h3>
                     <ul>
@@ -2637,6 +2900,91 @@ discoverSaturnServices().then(services =&gt; {
                         </div>
                     </div>
 
+                    <h3>Comparison: DNS-SD Commands vs Zeroconf Library (Discovery)</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Aspect</th>
+                                <th>DNS-SD Commands</th>
+                                <th>Zeroconf Library</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Language Support</strong></td>
+                                <td>Any language with subprocess support</td>
+                                <td>Python only</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Dependencies</strong></td>
+                                <td>System-level (dns-sd/avahi-browse)</td>
+                                <td>Python package (pip install)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>API Complexity</strong></td>
+                                <td>Parse text output from subprocess</td>
+                                <td>Clean object-oriented API</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Event Handling</strong></td>
+                                <td>Manual polling or parsing streaming output</td>
+                                <td>Built-in callback system</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Cross-Platform</strong></td>
+                                <td>Different commands per OS</td>
+                                <td>Consistent across all platforms</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Used In</strong></td>
+                                <td>ollama_server.py, openrouter_server.py, local_proxy_client.py</td>
+                                <td>fallback_server.py, file_upload_client.py</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="callout callout-tip">
+                        <div class="callout-title">Which Discovery Approach Should I Use?</div>
+                        <div class="callout-content">
+                            <p><strong>Use DNS-SD commands if:</strong></p>
+                            <ul>
+                                <li>You're not using Python, or want to minimize dependencies</li>
+                                <li>You need maximum portability across languages</li>
+                                <li>You want to match Saturn's reference client implementations</li>
+                            </ul>
+                            <p><strong>Use the zeroconf library if:</strong></p>
+                            <ul>
+                                <li>You're building a Python-only client application</li>
+                                <li>You prefer a cleaner API over subprocess management</li>
+                                <li>You need sophisticated event-driven service monitoring with callbacks</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="int-registration-zeroconf">
+                    <h2>Server Registration with Zeroconf Library</h2>
+                    <p>As an alternative to subprocess-based DNS-SD commands, servers can use the Python <code>zeroconf</code> library to register services. This provides a cleaner API but requires installing an additional dependency.</p>
+
+                    <h3>When to Use This Approach</h3>
+                    <ul>
+                        <li><strong>Python-only servers:</strong> If you're building a server in Python and don't mind the dependency</li>
+                        <li><strong>Cleaner API:</strong> The library provides a more Pythonic interface than managing subprocess lifetimes</li>
+                        <li><strong>Cross-platform without external commands:</strong> Works consistently across platforms without requiring <code>dns-sd</code> or <code>avahi-publish</code></li>
+                        <li><strong>Programmatic control:</strong> Easier to start/stop registration dynamically</li>
+                    </ul>
+
+                    <h3>Installation</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">Terminal</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre>pip install zeroconf</pre>
+                        </div>
+                    </div>
+
                     <h3>Service Registration with Zeroconf</h3>
                     <p>This example shows how to announce a Saturn service, based on <code>servers/fallback_server.py</code>:</p>
 
@@ -2694,7 +3042,70 @@ discoverSaturnServices().then(services =&gt; {
                         </div>
                     </div>
 
-                    <h3>Comparison: DNS-SD Commands vs Zeroconf Library</h3>
+                    <h3>Integration with FastAPI/Flask</h3>
+                    <p>For production servers using FastAPI or Flask, integrate registration into the application lifecycle:</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-filename">fastapi_with_zeroconf.py</span>
+                            <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <div class="code-content">
+<pre><span class="keyword">from</span> fastapi <span class="keyword">import</span> FastAPI
+<span class="keyword">from</span> contextlib <span class="keyword">import</span> asynccontextmanager
+<span class="keyword">from</span> zeroconf <span class="keyword">import</span> ServiceInfo, Zeroconf
+<span class="keyword">import</span> socket
+
+<span class="comment"># Global variables for cleanup</span>
+zeroconf_instance = <span class="keyword">None</span>
+service_info = <span class="keyword">None</span>
+
+@asynccontextmanager
+<span class="keyword">async</span> <span class="keyword">def</span> <span class="function">lifespan</span>(app: FastAPI):
+    <span class="string">"""Manage service registration during app lifecycle"""</span>
+    <span class="keyword">global</span> zeroconf_instance, service_info
+
+    <span class="comment"># Startup: Register service</span>
+    print(<span class="string">"Registering Saturn service..."</span>)
+    zeroconf_instance = Zeroconf()
+
+    hostname = socket.gethostname()
+    host_ip = socket.gethostbyname(hostname)
+
+    service_info = ServiceInfo(
+        type_=<span class="string">"_saturn._tcp.local."</span>,
+        name=<span class="string">f"MyAIService._saturn._tcp.local."</span>,
+        port=<span class="number">8080</span>,
+        addresses=[socket.inet_aton(host_ip)],
+        server=<span class="string">f"{hostname}.local."</span>,
+        properties={
+            <span class="string">'version'</span>: <span class="string">'1.0'</span>,
+            <span class="string">'api'</span>: <span class="string">'Custom'</span>,
+            <span class="string">'priority'</span>: <span class="string">'10'</span>
+        }
+    )
+
+    zeroconf_instance.register_service(service_info)
+    print(<span class="string">"Service registered!"</span>)
+
+    <span class="keyword">yield</span>
+
+    <span class="comment"># Shutdown: Unregister service</span>
+    print(<span class="string">"Unregistering service..."</span>)
+    <span class="keyword">if</span> zeroconf_instance <span class="keyword">and</span> service_info:
+        zeroconf_instance.unregister_service(service_info)
+        zeroconf_instance.close()
+    print(<span class="string">"Service unregistered"</span>)
+
+app = FastAPI(lifespan=lifespan)
+
+@app.get(<span class="string">"/v1/health"</span>)
+<span class="keyword">async</span> <span class="keyword">def</span> <span class="function">health</span>():
+    <span class="keyword">return</span> {<span class="string">"status"</span>: <span class="string">"ok"</span>}</pre>
+                        </div>
+                    </div>
+
+                    <h3>Comparison: DNS-SD Commands vs Zeroconf Library (Registration)</h3>
                     <table>
                         <thead>
                             <tr>
@@ -2711,18 +3122,18 @@ discoverSaturnServices().then(services =&gt; {
                             </tr>
                             <tr>
                                 <td><strong>Dependencies</strong></td>
-                                <td>System-level (dns-sd/avahi-browse)</td>
+                                <td>System-level (dns-sd/avahi-publish)</td>
                                 <td>Python package (pip install)</td>
                             </tr>
                             <tr>
-                                <td><strong>API Complexity</strong></td>
-                                <td>Parse text output from subprocess</td>
-                                <td>Clean object-oriented API</td>
+                                <td><strong>Process Management</strong></td>
+                                <td>Must keep subprocess running</td>
+                                <td>Managed internally by library</td>
                             </tr>
                             <tr>
-                                <td><strong>Event Handling</strong></td>
-                                <td>Manual polling or parsing streaming output</td>
-                                <td>Built-in callback system</td>
+                                <td><strong>Cleanup</strong></td>
+                                <td>Terminate subprocess on exit</td>
+                                <td>Call unregister_service()</td>
                             </tr>
                             <tr>
                                 <td><strong>Cross-Platform</strong></td>
@@ -2731,26 +3142,28 @@ discoverSaturnServices().then(services =&gt; {
                             </tr>
                             <tr>
                                 <td><strong>Used In</strong></td>
-                                <td>ollama_server.py, openrouter_server.py, local_proxy_client.py</td>
-                                <td>fallback_server.py, file_upload_client.py</td>
+                                <td>ollama_server.py, openrouter_server.py</td>
+                                <td>fallback_server.py</td>
                             </tr>
                         </tbody>
                     </table>
 
                     <div class="callout callout-tip">
-                        <div class="callout-title">Which Approach Should I Use?</div>
+                        <div class="callout-title">Which Registration Approach Should I Use?</div>
                         <div class="callout-content">
                             <p><strong>Use DNS-SD commands if:</strong></p>
                             <ul>
                                 <li>You're not using Python, or want to minimize dependencies</li>
                                 <li>You need maximum portability across languages</li>
-                                <li>You want to match Saturn's reference implementations</li>
+                                <li>You want to match Saturn's reference server implementations</li>
+                                <li>You're comfortable managing subprocess lifetimes</li>
                             </ul>
                             <p><strong>Use the zeroconf library if:</strong></p>
                             <ul>
-                                <li>You're building a Python-only application</li>
-                                <li>You prefer a cleaner API over subprocess management</li>
-                                <li>You need sophisticated event-driven service monitoring</li>
+                                <li>You're building a Python-only server</li>
+                                <li>You prefer a cleaner API integrated with your application lifecycle</li>
+                                <li>You want consistent behavior across all platforms without system commands</li>
+                                <li>You need programmatic control over registration</li>
                             </ul>
                         </div>
                     </div>
