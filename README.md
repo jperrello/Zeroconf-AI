@@ -27,16 +27,6 @@ So Derek runs our script on a Raspberry Pi. Now every app on his home network ca
 
 **But wait, there's more!** Derek's tech-savvy neighbor also runs Ollama locally. Derek's apps automatically discover BOTH services and pick the best one. If OpenRouter goes down? Seamless failover to local Ollama. It's like RAID, but for AI.
 
-## What Exists Right Now
-
-This repository contains a working Saturn implementation that:
-
-1. **Broadcasts AI services** on your local network using mDNS
-2. **Proxies requests** to multiple providers (OpenRouter, Ollama, Gemini)
-3. **Requires zero configuration** on client devices - they just discover it automatically
-4. **Handles failover** - if one service dies, clients automatically switch to another
-5. **Priority-based routing** - prefer local models over cloud, or vice versa
-6. **Integrates with popular AI interfaces** - native support for Open WebUI, plus proxy support for Jan and other apps
 
 ## What's In This Repo
 
@@ -93,15 +83,28 @@ This repository contains a working Saturn implementation that:
 
 **The easiest way to use Saturn with a polished web interface**
 
-A custom function for Open WebUI that brings automatic service discovery to this popular web-based AI chat interface. No manual endpoint configuration - just install the function, enable it, and all your Saturn services appear in the model selector.
+The `owui_saturn.py` file implements a service discovery pipe for Open WebUI that automatically discovers and connects to AI model services advertised on the local network. This pipe enables Open WebUI to seamlessly integrate with multiple LLM providers without manual configuration.
 
-- Automatic discovery of all Saturn services on your network
-- Model aggregation from multiple providers
-- Priority-based routing with failover
-- Configurable timeouts and caching
-- Full streaming support
+- **SaturnDiscovery**: Uses the `dns-sd` command-line tool to browse for services advertising the `_saturn._tcp` service type
+- **Pipe Class**: Implements the Open WebUI pipe interface with configurable valves for discovery timeout, failover behavior, cache TTL, and request timeout
 
-Works with both the Open WebUI desktop app and server installation.
+**Installation:**
+
+1. Install Open WebUI (either desktop app or server):
+   - Desktop: https://github.com/open-webui/desktop
+   - Server: https://github.com/open-webui/open-webui
+
+2. Add the Saturn function:
+   - Go to Settings → Admin Settings → Functions
+   - Click "+" → "Discover a Function"
+   - Search for "Saturn" and install
+   - Alternatively, copy the code from `owui_saturn.py` and paste into a new function
+
+3. Enable the function and refresh Open WebUI
+
+4. Start a Saturn server on your network
+
+5. Saturn models will appear in your model selector with the `SATURN/` prefix
 
 ### VLC Extension (`vlc_extension/`)
 
@@ -141,68 +144,12 @@ Then in VLC:
 - **Chat**: View → Extensions → Saturn Chat
 - **Roast**: View → Extensions → Saturn Roast Extension
 
-### Open WebUI Integration (`owui_saturn.py`)
-
-**Zero-configuration AI for Open WebUI**
-
-The `owui_saturn.py` file implements a dynamic service discovery pipe for Open WebUI that automatically discovers and connects to AI model services advertised on the local network. This pipe enables Open WebUI to seamlessly integrate with multiple LLM providers without manual configuration, leveraging zero-configuration networking (Zeroconf/mDNS) for automatic service discovery.
-
-**How It Works:**
-- **SaturnDiscovery**: Uses the `dns-sd` command-line tool to browse for services advertising the `_saturn._tcp` service type
-- **Pipe Class**: Implements the Open WebUI pipe interface with configurable valves for discovery timeout, failover behavior, cache TTL, and request timeout
-- **Model Routing and Failover**: Automatically routes requests to the appropriate service with failover support if primary services fail
-
-**Installation:**
-
-1. Install Open WebUI (either desktop app or server):
-   - Desktop: https://github.com/open-webui/desktop
-   - Server: https://github.com/open-webui/open-webui
-
-2. Add the Saturn function:
-   - Go to Settings → Admin Settings → Functions
-   - Click "+" → "Discover a Function"
-   - Search for "Saturn" and install
-   - Alternatively, copy the code from `owui_saturn.py` and paste into a new function
-
-3. Enable the function and refresh Open WebUI
-
-4. Start a Saturn server on your network
-
-5. Saturn models will appear in your model selector with the `SATURN/` prefix
-
 **Features:**
 - Automatic service discovery on your local network
 - Model aggregation from all discovered Saturn services
 - Priority-based routing with automatic failover
 - Configurable settings (discovery timeout, cache TTL, request timeout)
 - Full streaming support for real-time responses
-
-
-## Repository Structure
-
-```
-Zeroconf-AI/
-├── servers/              # AI service servers
-│   ├── openrouter_server.py     # OpenRouter proxy (200+ models)
-│   ├── ollama_server.py         # Local Ollama proxy
-│   └── fallback_server.py       # Testing/humor server
-├── clients/              # Client implementations
-│   ├── simple_chat_client.py    # Basic example (<100 lines)
-│   ├── local_proxy_client.py    # Full-featured with failover
-│   └── file_upload_client.py    # Multimodal file support
-├── vlc_extension/        # VLC Media Player extensions
-│   ├── saturn_chat.lua          # VLC chat extension
-│   ├── saturn_roast.lua         # VLC roast extension
-│   ├── vlc_discovery_bridge.py  # Python bridge (source)
-│   ├── vlc_discovery_bridge.spec # PyInstaller build spec
-│   └── bridge/                  # Bundled executables
-│       ├── vlc_discovery_bridge     # Linux/macOS
-│       └── vlc_discovery_bridge.exe # Windows
-├── docs/                 # Documentation website
-│   └── index.html               # Full documentation (User, Integrator, Integrations)
-├── owui_saturn.py        # Open WebUI function for Saturn integration
-└── .env                  # Your OpenRouter API key goes here
-```
 
 ## Quick Start
 
@@ -240,6 +187,10 @@ python servers/ollama_server.py --priority 100
 ```bash
 python servers/fallback_server.py --priority 999
 ```
+Alternatively, you can create your own server! Follow the logic in the servers/ folder, and announce a service with:
+```bash
+dns-sd -R "<name>" "_saturn._tcp" "local" 8081 "version=1.0" "api=<api>" "priority=50"
+```
 
 ### Priority System
 
@@ -250,7 +201,7 @@ Example setup:
 - OpenRouter: priority 50 (use if Ollama is down)
 - Fallback server: priority 999 (only if you're truly desperate)
 
-Priorities are auto-negotiated. If you try to start two services with the same priority, the second one automatically increments until it finds an available slot. No conflicts, no drama.
+ If you try to start two services with the same priority, the second one automatically increments until it finds an available slot. No conflicts, no angry servers fighting over a port number.
 
 ### Client Usage
 
@@ -284,15 +235,8 @@ response = client.chat("What's the meaning of life?")
 print(response)
 ```
 
-## What This Actually Does
+## Example network
 
-When you run servers:
-- Each broadcasts "Hey, I'm an AI service!" with its priority
-- Clients automatically discover ALL services
-- Clients pick the best one based on priority
-- If a service goes down, clients seamlessly switch to the next-best option
-
-**Example network:**
 - Derek's Raspberry Pi: Running OpenRouter server (priority 50)
 - Derek's gaming PC: Running Ollama server (priority 10)
 - Derek's definitely-not-overkill homelab: Running fallback server (priority 999)
@@ -311,14 +255,11 @@ All of Derek's family's apps automatically use the gaming PC first (priority 10)
 **Service Registration** (Servers):
 - Each server registers itself via mDNS when started
 - TXT records include: version, API type, features, and priority
-- Priority system (lower number = higher preference): 1-20 (local), 21-100 (standard), 101+ (fallback)
-- Automatic priority conflict resolution
 
 **Service Discovery** (Clients):
 - Continuous background browsing for Saturn services
 - Health monitoring and model discovery
-- Priority-based selection and automatic failover
-- Works across local network (same subnet)
+- Priority-based selection
 
 **API Endpoints**:
 - `/v1/health` - Check if service is alive
@@ -336,7 +277,7 @@ All of Derek's family's apps automatically use the gaming PC first (priority 10)
 }
 ```
 
-All servers speak OpenAI-compatible API. Whether you're hitting OpenRouter, Ollama, or even the sarcastic fallback server, the request/response format is identical. This means your client code works with ANY Saturn server without modification.
+__All servers speak OpenAI-compatible API.__ Whether you're hitting OpenRouter, Ollama, or even the sarcastic fallback server, the request/response format is identical. This means your client code works with ANY Saturn server without modification.
 
 
 ## FAQ
